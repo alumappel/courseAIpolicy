@@ -219,17 +219,26 @@ const formConfig = [
       },
       {
         id: "reporting_format",
-        label: "מהי צורת הדיווח הרצויה?",
+        label: "צורת הדיווח המועדפת",
         type: "radio",
         required: true,
-        options: ["תבנית הצהרת שימוש AI במטלות", "קישור לתבנית שלכם"]
-      },
-      {
-        id: "reporting_format_link",
-        label: "אם בחרתם בתבנית שלכם, אפשר להוסיף כאן קישור",
-        type: "text",
-        required: false,
-        placeholder: "הדביקו כאן קישור למסמך שיתופי או לטופס"
+        options: [
+          {
+            value: "תבנית הצהרת שימוש ב-AI במטלות",
+            titleHtml:
+              '<a href="assets/files/הצהרה על שימוש בכלי בינה מלאכותית במטלות.docx" target="_blank" rel="noopener">תבנית הצהרת שימוש ב-AI במטלות</a>'
+          },
+          {
+            value: "קישור לתבנית שלכם",
+            title: "קישור לתבנית שלכם",
+            conditionalInput: {
+              id: "reporting_format_link",
+              placeholder: "הדביקו כאן קישור למסמך שיתופי או לטופס",
+              ariaLabel: "קישור לתבנית הדיווח שלכם",
+              required: true
+            }
+          }
+        ]
       },
       {
         id: "reporting_timing",
@@ -301,21 +310,19 @@ const formConfig = [
     intro:
       "השאלות הבאות נועדו לחשיבה פדגוגית עבורכם. אין חובה לענות עליהן כדי להפיק את המדיניות, אבל הן עוזרות לוודא שהמדיניות רואה את כלל הסטודנטים.",
     callout:
-      "ניתן למצוא תכנים מומלצים שתוכלו להנגיש לסטודנטים בסביבת הלמידה של המרכז, למשל חומרי הדרכה על פרומפטים, סקירת ספרות ושימוש אחראי בכלים.",
+      'ניתן למצוא תכנים מומלצים שתוכלו להנגיש לסטודנטים <a href="https://md.hit.ac.il/course/view.php?id=22997" target="_blank" rel="noopener">בסביבת הלמידה של המרכז</a>, למשל <a href="https://md.hit.ac.il/mod/page/view.php?id=839699" target="_blank" rel="noopener">חומרי הדרכה על שימוש מיטבי ב-AI</a>, או <a href="https://md.hit.ac.il/mod/page/view.php?id=866018&forceview=1" target="_blank" rel="noopener">תכנים על ביצוע סקר ספרות</a>.',
     questions: [
       {
         id: "equity_paid_tools",
         label: "האם השימושים המומלצים בקורס דורשים גישה לכלים בתשלום, ואם כן מהי החלופה ההוגנת?",
-        type: "textarea",
-        required: false,
-        placeholder: "לדוגמה: נאפשר חלופה מבוססת כלים חינמיים או נציע מסלול ביצוע מקביל שאינו תלוי בכלי בתשלום."
+        type: "reflection",
+        required: false
       },
       {
         id: "equity_support",
         label: "אילו כלים או תמיכות אפשר להציע לסטודנטים שיש להם פערי אוריינות בכלי AI?",
-        type: "textarea",
-        required: false,
-        placeholder: "לדוגמה: מדריך קצר, תרגול בכיתה, קישורים למשאבים, דוגמאות פרומפטים או שעות קבלה."
+        type: "reflection",
+        required: false
       }
     ]
   }
@@ -324,6 +331,7 @@ const formConfig = [
 const state = {
   questionElements: new Map(),
   otherInputs: new Map(),
+  conditionalInputs: new Map(),
   wizardQuestions: [],
   currentQuestionIndex: 0,
   answers: {},
@@ -383,6 +391,9 @@ function renderQuestion(question, sectionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "question-block";
   wrapper.id = `${question.id}-block`;
+  if (question.type === "reflection") {
+    wrapper.classList.add("question-block--reflection");
+  }
 
   const fieldset = document.createElement("fieldset");
   fieldset.className = "border-0 p-0 m-0";
@@ -421,11 +432,16 @@ function renderQuestion(question, sectionId) {
     case "text":
       inputContainer = renderTextInput(question);
       break;
+    case "reflection":
+      inputContainer = null;
+      break;
     default:
       inputContainer = document.createElement("div");
   }
 
-  fieldset.appendChild(inputContainer);
+  if (inputContainer) {
+    fieldset.appendChild(inputContainer);
+  }
 
   const errorEl = document.createElement("p");
   errorEl.className = "field-error";
@@ -438,6 +454,52 @@ function renderQuestion(question, sectionId) {
   return wrapper;
 }
 
+function createCalloutElement(text, id = "") {
+  const callout = document.createElement("div");
+  callout.className = "question-callout mb-4";
+  if (id) {
+    callout.id = id;
+  }
+  callout.innerHTML = `
+    <span class="callout-icon" aria-hidden="true">i</span>
+    <p class="mb-0">${text}</p>
+  `;
+  return callout;
+}
+
+function normalizeOption(option) {
+  if (typeof option === "string") {
+    return {
+      value: option,
+      title: option,
+      titleHtml: "",
+      description: "",
+      descriptionHtml: "",
+      conditionalInput: null
+    };
+  }
+
+  return {
+    value: option.value ?? option.title ?? "",
+    title: option.title ?? option.value ?? "",
+    titleHtml: option.titleHtml || "",
+    description: option.description || "",
+    descriptionHtml: option.descriptionHtml || "",
+    conditionalInput: option.conditionalInput || null
+  };
+}
+
+function makeChoiceCardInteractive(card, input) {
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("label, input, textarea, select, button, a")) {
+      return;
+    }
+
+    input.click();
+    input.focus();
+  });
+}
+
 function renderChoiceQuestion(question) {
   const grid = document.createElement("div");
   grid.className = "choice-grid";
@@ -448,16 +510,41 @@ function renderChoiceQuestion(question) {
   const inputs = [];
 
   question.options.forEach((option, index) => {
+    const optionData = normalizeOption(option);
     const optionId = `${question.id}-${index}`;
     const card = document.createElement("div");
     card.className = "choice-card form-check";
     card.innerHTML = `
-      <input class="form-check-input" type="${question.type}" name="${question.id}" id="${optionId}" value="${option}" />
+      <input class="form-check-input" type="${question.type}" name="${question.id}" id="${optionId}" value="${optionData.value}" />
       <label class="form-check-label" for="${optionId}">
-        <span class="choice-title">${option}</span>
+        <span class="choice-title">${optionData.titleHtml || optionData.title}</span>
+        ${optionData.descriptionHtml ? `<span class="choice-description">${optionData.descriptionHtml}</span>` : ""}
+        ${!optionData.descriptionHtml && optionData.description ? `<span class="choice-description">${optionData.description}</span>` : ""}
       </label>
     `;
-    inputs.push(card.querySelector("input"));
+    const input = card.querySelector("input");
+
+    if (optionData.conditionalInput && question.type === "radio") {
+      const conditionalInput = document.createElement("input");
+      conditionalInput.type = "url";
+      conditionalInput.className = "form-control other-input-wrap";
+      conditionalInput.id = optionData.conditionalInput.id;
+      conditionalInput.placeholder = optionData.conditionalInput.placeholder || "";
+      conditionalInput.hidden = true;
+      conditionalInput.setAttribute("aria-label", optionData.conditionalInput.ariaLabel || question.label);
+      conditionalInput.addEventListener("input", () => clearQuestionError(question.id));
+      card.appendChild(conditionalInput);
+
+      state.conditionalInputs.set(question.id, {
+        triggerValue: optionData.value,
+        input: conditionalInput,
+        answerId: optionData.conditionalInput.id,
+        required: Boolean(optionData.conditionalInput.required)
+      });
+    }
+
+    makeChoiceCardInteractive(card, input);
+    inputs.push(input);
     grid.appendChild(card);
   });
 
@@ -487,6 +574,7 @@ function renderChoiceQuestion(question) {
     grid.appendChild(otherCard);
 
     const toggle = otherCard.querySelector("input");
+    makeChoiceCardInteractive(otherCard, toggle);
     state.otherInputs.set(question.id, { toggle, input: otherInput, type: question.type });
 
     toggle.addEventListener("change", () => {
@@ -504,6 +592,7 @@ function renderChoiceQuestion(question) {
       if (question.allowOther) {
         syncOtherField(question.id);
       }
+      syncConditionalField(question.id);
       clearQuestionError(question.id);
     });
   });
@@ -529,16 +618,21 @@ function renderDualCheckboxQuestion(question) {
     grid.dataset.columns = "1";
 
     group.options.forEach((option, index) => {
+      const optionData = normalizeOption(option);
       const optionId = `${group.id}-${index}`;
       const card = document.createElement("div");
       card.className = "choice-card form-check";
       card.innerHTML = `
-        <input class="form-check-input" type="checkbox" name="${group.id}" id="${optionId}" value="${option}" />
+        <input class="form-check-input" type="checkbox" name="${group.id}" id="${optionId}" value="${optionData.value}" />
         <label class="form-check-label" for="${optionId}">
-          <span class="choice-title">${option}</span>
+          <span class="choice-title">${optionData.titleHtml || optionData.title}</span>
+          ${optionData.descriptionHtml ? `<span class="choice-description">${optionData.descriptionHtml}</span>` : ""}
+          ${!optionData.descriptionHtml && optionData.description ? `<span class="choice-description">${optionData.description}</span>` : ""}
         </label>
       `;
-      card.querySelector("input").addEventListener("change", () => clearQuestionError(question.id));
+      const input = card.querySelector("input");
+      makeChoiceCardInteractive(card, input);
+      input.addEventListener("change", () => clearQuestionError(question.id));
       grid.appendChild(card);
     });
 
@@ -563,6 +657,7 @@ function renderDualCheckboxQuestion(question) {
       grid.appendChild(otherCard);
 
       const toggle = otherCard.querySelector("input");
+      makeChoiceCardInteractive(otherCard, toggle);
       state.otherInputs.set(group.id, { toggle, input: otherInput, type: "checkbox" });
       toggle.addEventListener("change", () => {
         syncOtherField(group.id);
@@ -607,6 +702,22 @@ function syncOtherField(id) {
   entry.input.hidden = !entry.toggle.checked;
   entry.input.toggleAttribute("required", entry.toggle.checked && entry.type === "radio");
   if (!entry.toggle.checked) {
+    entry.input.value = "";
+  }
+}
+
+function syncConditionalField(id) {
+  const entry = state.conditionalInputs.get(id);
+  if (!entry) {
+    return;
+  }
+
+  const selected = [...document.querySelectorAll(`[name="${id}"]`)].find((input) => input.checked);
+  const isVisible = selected?.value === entry.triggerValue;
+  entry.input.hidden = !isVisible;
+  entry.input.toggleAttribute("required", isVisible && entry.required);
+
+  if (!isVisible) {
     entry.input.value = "";
   }
 }
@@ -740,7 +851,11 @@ function clearAllErrors() {
 
 function getQuestionFields(question) {
   if (question.type === "checkbox" || question.type === "radio") {
-    return [...document.querySelectorAll(`[name="${question.id}"]`), ...(state.otherInputs.get(question.id) ? [state.otherInputs.get(question.id).input] : [])];
+    return [
+      ...document.querySelectorAll(`[name="${question.id}"]`),
+      ...(state.otherInputs.get(question.id) ? [state.otherInputs.get(question.id).input] : []),
+      ...(state.conditionalInputs.get(question.id) ? [state.conditionalInputs.get(question.id).input] : [])
+    ];
   }
 
   if (question.type === "dual-checkbox") {
@@ -772,7 +887,7 @@ function buildPolicyText(answers) {
   const reportingFormat =
     answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link
       ? `קישור לתבנית הדיווח שנבחרה בקורס: ${answers.reporting_format_link}.`
-      : "הדיווח יתבצע באמצעות תבנית הצהרת שימוש AI במטלות.";
+      : "הדיווח יתבצע באמצעות תבנית הצהרת שימוש ב-AI במטלות.";
 
   const citationText = answers.citation_guidance
     ? `לעניין הפניה וציטוט של תוכן שנוצר על ידי AI: ${answers.citation_guidance}`
@@ -893,25 +1008,48 @@ function handleSubmit(event) {
 }
 
 function flattenQuestions(config) {
-  return config.flatMap((section) =>
-    section.questions.map((question) => ({
-      ...question,
+  return config.flatMap((section) => {
+    const questions = section.questions
+      .filter((question) => question.id !== "reporting_format_link")
+      .map((question) => ({
+        ...question,
+        sectionId: section.sectionId,
+        sectionTitle: section.sectionTitle,
+        sectionIntro: section.intro,
+        sectionCallout: section.callout || ""
+      }));
+
+    if (section.sectionId === "equity") {
+      return [
+        {
+          pageId: `${section.sectionId}-page`,
+          sectionId: section.sectionId,
+          sectionTitle: section.sectionTitle,
+          sectionIntro: section.intro,
+          sectionCallout: section.callout || "",
+          calloutPlacement: "afterQuestions",
+          questions
+        }
+      ];
+    }
+
+    return questions.map((question) => ({
+      pageId: question.id,
       sectionId: section.sectionId,
       sectionTitle: section.sectionTitle,
       sectionIntro: section.intro,
-      sectionCallout: section.callout || ""
-    }))
-  );
+      sectionCallout: section.callout || "",
+      calloutPlacement: "beforeQuestions",
+      questions: [question]
+    }));
+  });
 }
 
 function renderWizard() {
   formSectionsEl.innerHTML = `
     <div class="wizard-shell" aria-labelledby="wizard-title">
       <div class="wizard-topbar">
-        <div>
-          <p class="wizard-step-label" id="wizard-title">שאלה אחת בכל פעם</p>
-          <p class="wizard-section-title" id="wizard-section-title"></p>
-        </div>
+        <p class="wizard-skip-note mb-0" id="wizard-title">אפשר לדלג על שאלות פחות רלוונטיות ולחזור אליהן בהמשך.</p>
         <p class="wizard-progress-text" id="wizard-progress-text" aria-live="polite"></p>
       </div>
       <div class="progress wizard-progress" role="progressbar" aria-labelledby="wizard-progress-text" aria-valuemin="0" aria-valuemax="100">
@@ -927,7 +1065,6 @@ function renderWizard() {
           <button type="submit" class="btn btn-primary" id="wizard-next">הבא</button>
         </div>
       </div>
-      <p class="wizard-skip-note mt-3">אפשר לדלג על שאלות פחות רלוונטיות ולחזור אליהן בהמשך.</p>
     </div>
   `;
 
@@ -939,45 +1076,47 @@ function renderWizard() {
 
 function showQuestion(index, options = {}) {
   state.currentQuestionIndex = Math.min(Math.max(index, 0), state.wizardQuestions.length - 1);
-  const question = state.wizardQuestions[state.currentQuestionIndex];
+  const page = state.wizardQuestions[state.currentQuestionIndex];
   const questionMount = document.getElementById("wizard-question");
-  const sectionTitleEl = document.getElementById("wizard-section-title");
 
   state.questionElements.clear();
   state.otherInputs.clear();
+  state.conditionalInputs.clear();
   questionMount.innerHTML = "";
 
   const wrapper = document.createElement("div");
   wrapper.className = "form-section";
-  wrapper.setAttribute("aria-labelledby", `${question.sectionId}-title`);
+  wrapper.setAttribute("aria-labelledby", `${page.sectionId}-title`);
   wrapper.innerHTML = `
     <div class="form-section-header">
-      <h3 id="${question.sectionId}-title" class="h4">${question.sectionTitle}</h3>
-      <p class="mb-0">${question.sectionIntro}</p>
+      <h3 id="${page.sectionId}-title" class="h4">${page.sectionTitle}</h3>
+      <p class="mb-0">${page.sectionIntro}</p>
     </div>
   `;
 
-  if (question.sectionCallout && !document.getElementById(`${question.sectionId}-callout-shown`)) {
-    const callout = document.createElement("div");
-    callout.className = "question-callout mb-4";
-    callout.id = `${question.sectionId}-callout-shown`;
-    callout.innerHTML = `
-      <span class="callout-icon" aria-hidden="true">i</span>
-      <p class="mb-0">${question.sectionCallout}</p>
-    `;
-    wrapper.appendChild(callout);
+  if (page.sectionCallout && page.calloutPlacement !== "afterQuestions") {
+    wrapper.appendChild(createCalloutElement(page.sectionCallout, `${page.sectionId}-callout-shown`));
   }
 
-  wrapper.appendChild(renderQuestion(question, question.sectionId));
-  questionMount.appendChild(wrapper);
-  restoreQuestionAnswer(question, state.answers[question.id]);
+  page.questions.forEach((question, questionIndex) => {
+    const questionEl = renderQuestion(question, question.sectionId);
+    if (page.questions.length > 1 && questionIndex === 0) {
+      questionEl.classList.add("question-block--mb-3");
+    }
+    wrapper.appendChild(questionEl);
+    restoreQuestionAnswer(question, state.answers[question.id]);
+  });
 
-  sectionTitleEl.textContent = question.sectionTitle;
+  if (page.sectionCallout && page.calloutPlacement === "afterQuestions") {
+    wrapper.appendChild(createCalloutElement(page.sectionCallout, `${page.sectionId}-callout-shown`));
+  }
+
+  questionMount.appendChild(wrapper);
   updateWizardProgress();
   clearAllErrors();
 
   if (options.focusQuestion) {
-    state.questionElements.get(question.id)?.fieldset.focus();
+    state.questionElements.get(page.questions[0]?.id)?.fieldset.focus();
   }
 }
 
@@ -999,43 +1138,66 @@ function updateWizardProgress() {
 }
 
 function saveCurrentQuestionAnswer() {
-  const question = state.wizardQuestions[state.currentQuestionIndex];
-  if (!question) {
+  const page = state.wizardQuestions[state.currentQuestionIndex];
+  if (!page) {
     return;
   }
 
-  const answer = collectQuestionAnswer(question);
-  state.answers[question.id] = answer;
-  if (isQuestionAnswered(question, answer)) {
-    state.skippedQuestions.delete(question.id);
+  page.questions.forEach((question) => {
+    const answer = collectQuestionAnswer(question);
+    state.answers[question.id] = answer;
+  });
+
+  if (page.questions.every((question) => !question.required || isQuestionAnswered(question, state.answers[question.id]))) {
+    state.skippedQuestions.delete(page.pageId);
   }
 }
 
 function collectQuestionAnswer(question) {
+  let answer;
+
   switch (question.type) {
     case "checkbox":
-      return collectChoiceValues(question.id, "checkbox");
+      answer = collectChoiceValues(question.id, "checkbox");
+      break;
     case "radio":
-      return collectChoiceValues(question.id, "radio");
+      answer = collectChoiceValues(question.id, "radio");
+      break;
     case "dual-checkbox": {
-      const answer = {};
+      answer = {};
       question.groups.forEach((group) => {
         answer[group.id] = collectChoiceValues(group.id, "checkbox");
       });
-      return answer;
+      break;
     }
     case "textarea":
     case "text": {
       const input = document.getElementById(question.id);
-      return input ? input.value.trim() : "";
+      answer = input ? input.value.trim() : "";
+      break;
     }
+    case "reflection":
+      answer = "";
+      break;
     default:
-      return "";
+      answer = "";
   }
+
+  const conditionalEntry = state.conditionalInputs.get(question.id);
+  if (conditionalEntry) {
+    state.answers[conditionalEntry.answerId] = answer === conditionalEntry.triggerValue ? conditionalEntry.input.value.trim() : "";
+  }
+
+  return answer;
 }
 
 function restoreQuestionAnswer(question, answer) {
   if (answer === undefined || answer === null) {
+    syncConditionalField(question.id);
+    return;
+  }
+
+  if (question.type === "reflection") {
     return;
   }
 
@@ -1053,11 +1215,18 @@ function restoreQuestionAnswer(question, answer) {
       input.value = answer;
     }
   }
+
+  const conditionalEntry = state.conditionalInputs.get(question.id);
+  if (conditionalEntry) {
+    syncConditionalField(question.id);
+    conditionalEntry.input.value = state.answers[conditionalEntry.answerId] || "";
+  }
 }
 
 function restoreChoiceAnswer(name, options, answer, type) {
   const values = Array.isArray(answer) ? answer : [answer].filter(Boolean);
-  const optionSet = new Set(options);
+  const optionValues = options.map((option) => normalizeOption(option).value);
+  const optionSet = new Set(optionValues);
   const customValues = values.filter((value) => !optionSet.has(value));
 
   values.forEach((value) => {
@@ -1086,6 +1255,10 @@ function isQuestionAnswered(question, answer) {
     return Object.values(answer || {}).some((groupAnswers) => Array.isArray(groupAnswers) && groupAnswers.length > 0);
   }
 
+  if (question.type === "reflection") {
+    return true;
+  }
+
   return Boolean(typeof answer === "string" ? answer.trim() : answer);
 }
 
@@ -1107,24 +1280,55 @@ function defaultQuestionAnswer(question) {
 
 function getAnswersSnapshot() {
   const answers = {};
-  state.wizardQuestions.forEach((question) => {
-    answers[question.id] = state.answers[question.id] ?? defaultQuestionAnswer(question);
+  state.wizardQuestions.forEach((page) => {
+    page.questions.forEach((question) => {
+      answers[question.id] = state.answers[question.id] ?? defaultQuestionAnswer(question);
+    });
+  });
+  Object.keys(state.answers).forEach((key) => {
+    if (!(key in answers)) {
+      answers[key] = state.answers[key];
+    }
   });
   return answers;
 }
 
 function validateCurrentQuestion({ allowSkip = false } = {}) {
-  const question = state.wizardQuestions[state.currentQuestionIndex];
-  const answer = collectQuestionAnswer(question);
-  state.answers[question.id] = answer;
+  const page = state.wizardQuestions[state.currentQuestionIndex];
+  let firstError = null;
 
-  if (!question.required || isQuestionAnswered(question, answer) || allowSkip || state.skippedQuestions.has(question.id)) {
+  page.questions.forEach((question) => {
     clearQuestionError(question.id);
+    const answer = collectQuestionAnswer(question);
+    state.answers[question.id] = answer;
+
+    if (allowSkip || state.skippedQuestions.has(page.pageId) || firstError) {
+      return;
+    }
+
+    if (question.required && !isQuestionAnswered(question, answer)) {
+      firstError = {
+        id: question.id,
+        message: "כדי להמשיך יש לענות על השאלה או לבחור בדילוג."
+      };
+      return;
+    }
+
+    const conditionalEntry = state.conditionalInputs.get(question.id);
+    if (conditionalEntry && answer === conditionalEntry.triggerValue && conditionalEntry.required && !conditionalEntry.input.value.trim()) {
+      firstError = {
+        id: question.id,
+        message: "כדי להמשיך יש להוסיף קישור לתבנית שבחרתם."
+      };
+    }
+  });
+
+  if (!firstError) {
     return true;
   }
 
-  markQuestionError(question.id, "כדי להמשיך יש לענות על השאלה או לבחור בדילוג.");
-  state.questionElements.get(question.id)?.fieldset.focus();
+  markQuestionError(firstError.id, firstError.message);
+  state.questionElements.get(firstError.id)?.fieldset.focus();
   return false;
 }
 
@@ -1147,10 +1351,16 @@ function goToPreviousQuestion() {
 }
 
 function skipCurrentQuestion() {
-  const question = state.wizardQuestions[state.currentQuestionIndex];
-  state.answers[question.id] = defaultQuestionAnswer(question);
-  state.skippedQuestions.add(question.id);
-  clearQuestionError(question.id);
+  const page = state.wizardQuestions[state.currentQuestionIndex];
+  page.questions.forEach((question) => {
+    state.answers[question.id] = defaultQuestionAnswer(question);
+    const conditionalEntry = state.conditionalInputs.get(question.id);
+    if (conditionalEntry) {
+      state.answers[conditionalEntry.answerId] = "";
+    }
+    clearQuestionError(question.id);
+  });
+  state.skippedQuestions.add(page.pageId);
 
   if (state.currentQuestionIndex === state.wizardQuestions.length - 1) {
     finishWizard({ allowCurrentSkip: true });

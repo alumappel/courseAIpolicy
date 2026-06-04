@@ -359,6 +359,14 @@ main > section:not(#builder) {
   margin-block-start: 1.5rem;
 }
 
+.question-block--mb-3 {
+  margin-block-end: 1rem;
+}
+
+.question-block--mb-3 + .question-block {
+  margin-block-start: 0;
+}
+
 .question-label {
   display: flex;
   align-items: center;
@@ -403,6 +411,7 @@ main > section:not(#builder) {
   border-radius: var(--radius-md);
   padding: 0.9rem 1rem;
   min-block-size: 100%;
+  cursor: pointer;
 }
 
 .choice-card .form-check-input {
@@ -413,6 +422,8 @@ main > section:not(#builder) {
 .choice-card .form-check-label {
   display: block;
   margin: 0;
+  flex: 1;
+  cursor: pointer;
 }
 
 .choice-card .choice-title {
@@ -434,6 +445,10 @@ main > section:not(#builder) {
 
 .other-input-wrap {
   margin-block-start: 0.75rem;
+}
+
+.question-block--reflection .question-label {
+  margin-block-end: 0;
 }
 
 .dual-select-grid {
@@ -509,7 +524,7 @@ main > section:not(#builder) {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1rem;
-  align-items: start;
+  align-items: center;
   padding-block-end: 1rem;
   border-block-end: 1px solid var(--color-neutral-2);
 }
