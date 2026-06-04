@@ -339,7 +339,6 @@ const studentSlideEl = document.getElementById("student-slide");
 const copyStatusEl = document.getElementById("copy-status");
 const builderStatusEl = document.getElementById("builder-status");
 const reflectionModalEl = document.getElementById("reflectionModal");
-let resetFormButton;
 const copyPolicyButton = document.getElementById("copy-policy");
 const printPolicyButton = document.getElementById("print-policy");
 
@@ -394,7 +393,6 @@ function renderQuestion(question, sectionId) {
   legend.className = "question-label";
   legend.innerHTML = `
     <span>${question.label}</span>
-    ${question.required ? '<span class="required-chip">שדה מומלץ למילוי</span>' : ""}
   `;
   fieldset.appendChild(legend);
 
@@ -894,21 +892,6 @@ function handleSubmit(event) {
   goToNextQuestion();
 }
 
-function handleReset() {
-  policyForm.reset();
-  state.answers = {};
-  state.skippedQuestions.clear();
-  state.currentQuestionIndex = 0;
-  copyStatusEl.textContent = "";
-  builderStatusEl.textContent = "הטופס נוקה.";
-  clearAllErrors();
-  state.otherInputs.forEach(({ input }) => {
-    input.hidden = true;
-    input.value = "";
-  });
-  showQuestion(0, { focusQuestion: true });
-}
-
 function flattenQuestions(config) {
   return config.flatMap((section) =>
     section.questions.map((question) => ({
@@ -938,10 +921,9 @@ function renderWizard() {
       <div class="wizard-actions">
         <div class="wizard-actions-group">
           <button type="button" class="btn btn-outline-primary" id="wizard-prev">הקודם</button>
-          <button type="button" class="btn btn-outline-primary" id="wizard-skip">דלג על השאלה</button>
         </div>
         <div class="wizard-actions-group">
-          <button type="button" class="btn btn-outline-primary" id="reset-form">ניקוי המענה</button>
+          <button type="button" class="btn btn-outline-primary" id="wizard-skip">דלג על השאלה</button>
           <button type="submit" class="btn btn-primary" id="wizard-next">הבא</button>
         </div>
       </div>
@@ -949,8 +931,6 @@ function renderWizard() {
     </div>
   `;
 
-  resetFormButton = document.getElementById("reset-form");
-  resetFormButton.addEventListener("click", handleReset);
   document.getElementById("wizard-prev").addEventListener("click", goToPreviousQuestion);
   document.getElementById("wizard-skip").addEventListener("click", skipCurrentQuestion);
 

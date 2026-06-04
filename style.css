@@ -199,8 +199,9 @@ main > section:not(#builder) {
 }
 
 .logo-img {
-  block-size: 70px;
+  block-size: 54px;
   inline-size: auto;
+  max-inline-size: min(100%, 17rem);
 }
 
 #main-nav {
@@ -252,6 +253,10 @@ main > section:not(#builder) {
 .hero-logo-wrap {
   inline-size: min(100%, 17rem);
   margin-inline: auto 0;
+}
+
+.hero-visual {
+  inline-size: min(100%, 23rem);
 }
 
 .hero-logo-wrap img {
@@ -556,6 +561,14 @@ main > section:not(#builder) {
   gap: 0.75rem;
 }
 
+.wizard-actions .btn-outline-primary:disabled,
+.wizard-actions .btn-outline-primary.disabled {
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  background-color: transparent;
+  opacity: 0.45;
+}
+
 .wizard-skip-note {
   color: var(--color-muted);
   margin: 0;
@@ -627,6 +640,16 @@ main > section:not(#builder) {
   box-shadow: var(--shadow-section), inset 0 6px 10px rgba(0, 81, 87, 0.1), inset 0 -6px 10px rgba(0, 81, 87, 0.1);
 }
 
+.contact-image-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.contact-image {
+  inline-size: min(100%, 26rem);
+  block-size: auto;
+}
+
 footer {
   background-color: var(--color-primary-dark);
   color: var(--color-bg-light);
@@ -678,6 +701,10 @@ footer a:hover {
 @media (max-width: 767.98px) {
   html {
     font-size: 103.125%;
+  }
+
+  .hero-visual {
+    display: none;
   }
 }
 
