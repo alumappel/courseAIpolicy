@@ -932,6 +932,34 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function hasMeaningfulAnswer(value) {
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value).some((entry) => hasMeaningfulAnswer(entry));
+  }
+
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+
+  return Boolean(value);
+}
+
+function getAnswerText(value) {
+  if (!hasMeaningfulAnswer(value)) {
+    return "";
+  }
+
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+
+  return String(value).trim();
+}
+
 function sanitizeUrl(value) {
   if (!value) {
     return "";
@@ -950,75 +978,120 @@ function sanitizeUrl(value) {
 }
 
 function buildPolicyHtml(answers) {
-  const goals = formatList(answers.course_goals);
-  const aiSkills = formatList(answers.ai_skills);
-  const risks = formatList(answers.skills_at_risk);
-  const allowedStages = formatList(answers.allowed_stages);
-  const boundaryLevel = answers.boundary_level || "המדיניות תיקבע לפי הנחיות הקורס והמטלות.";
-  const recommendedUses = formatList(answers.recommended_ai.recommended_uses);
-  const recommendedTools = formatList(answers.recommended_ai.recommended_tools);
-  const studentResponsibility = answers.student_responsibility || "לא הוגדר בשלב זה";
-  const verificationLevel = answers.verification_level || "לא הוגדר בשלב זה";
-  const privacyWarnings = formatList(answers.privacy_warnings);
-  const reportingScope = formatList(answers.reporting_scope);
-  const reportingTiming = formatList(answers.reporting_timing);
-  const masteryChecks = formatList(answers.mastery_checks);
-  const boundaryConsequences = formatList(answers.boundary_consequences);
-  const reportingConsequences = formatList(answers.reporting_consequences);
+  const goals = getAnswerText(answers.course_goals);
+  const aiSkills = getAnswerText(answers.ai_skills);
+  const risks = getAnswerText(answers.skills_at_risk);
+  const allowedStages = getAnswerText(answers.allowed_stages);
+  const boundaryLevel = getAnswerText(answers.boundary_level);
+  const recommendedUses = getAnswerText(answers.recommended_ai.recommended_uses);
+  const recommendedTools = getAnswerText(answers.recommended_ai.recommended_tools);
+  const studentResponsibility = getAnswerText(answers.student_responsibility);
+  const verificationLevel = getAnswerText(answers.verification_level);
+  const privacyWarnings = getAnswerText(answers.privacy_warnings);
+  const reportingScope = getAnswerText(answers.reporting_scope);
+  const reportingTiming = getAnswerText(answers.reporting_timing);
+  const masteryChecks = getAnswerText(answers.mastery_checks);
+  const boundaryConsequences = getAnswerText(answers.boundary_consequences);
+  const reportingConsequences = getAnswerText(answers.reporting_consequences);
   const policyLink = sanitizeUrl(answers.reporting_format_link);
+  const citationGuidance = getAnswerText(answers.citation_guidance);
+  const equityBlock = [answers.equity_paid_tools, answers.equity_support].filter((value) => hasMeaningfulAnswer(value));
+  const sections = ['<h2>מדיניות שימוש ב-AI בקורס</h2>'];
 
-  const reportingFormat =
-    answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link
-      ? policyLink
-        ? `קישור לתבנית הדיווח שנבחרה בקורס: <a href="${escapeHtml(policyLink)}" target="_blank" rel="noopener">${escapeHtml(
-            answers.reporting_format_link
-          )}</a>.`
-        : `קישור לתבנית הדיווח שנבחרה בקורס: ${escapeHtml(answers.reporting_format_link)}.`
-      : "הדיווח יתבצע באמצעות תבנית הצהרת שימוש ב-AI במטלות.";
-
-  const citationText = answers.citation_guidance
-    ? `לעניין הפניה וציטוט של תוכן שנוצר על ידי AI: ${escapeHtml(answers.citation_guidance)}`
-    : "במקרים שבהם נעשה שימוש בתוכן שנוצר על ידי AI, הסטודנטים יידרשו לציין במפורש את הכלי, אופי השימוש והיקפו בהתאם להנחיות המטלה.";
-
-  const equityBlock = [answers.equity_paid_tools, answers.equity_support].filter(Boolean);
-
-  return `
-    <h2>מדיניות שימוש ב-AI בקורס</h2>
-    <h3>רציונל</h3>
-    <p>מטרת המדיניות היא לשמור על הלימה בין מטרות הקורס לבין אופן השימוש בכלי AI. בקורס זה חשוב לנו במיוחד לקדם את התחומים הבאים: ${escapeHtml(
-      goals
-    )}. לצד זאת, אנו מעוניינים לעודד גם את המיומנויות הבאות בשימוש מושכל ב-AI: ${escapeHtml(aiSkills)}. עם זאת, חשוב לנו לצמצם פגיעה אפשרית בתחומים הבאים: ${escapeHtml(
-      risks
-    )}.</p>
-    <h3>גבולות הגזרה</h3>
-    <p>השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${escapeHtml(
-      allowedStages
-    )}. הקו המנחה המרכזי בקורס הוא: ${escapeHtml(boundaryLevel)}. דוגמאות לשימושים מומלצים בקורס: ${escapeHtml(
-      recommendedUses
-    )}. הכלים שאפשר לשקול לשימוש במסגרת הקורס הם: ${escapeHtml(recommendedTools)}.</p>
-    <h3>אחריות הסטודנט</h3>
-    <p>${escapeHtml(studentResponsibility)}</p>
-    <p>רמת בדיקת האמינות המצופה מהסטודנטים היא: ${escapeHtml(
-      verificationLevel
-    )}. בנוסף, יש להקפיד על ההנחיות הבאות בנושאי פרטיות ואבטחת מידע: ${escapeHtml(privacyWarnings)}.</p>
-    <h3>שקיפות וחובת דיווח</h3>
-    <p>כאשר נעשה שימוש ב-AI, הסטודנטים נדרשים לדווח לפחות על הפרטים הבאים: ${escapeHtml(
-      reportingScope
-    )}. ${reportingFormat} הדיווח נדרש במצבים הבאים: ${escapeHtml(reportingTiming)}. ${citationText} בקיאות הסטודנטים בחומר ובעבודה עשויה להיבדק גם באמצעות: ${escapeHtml(
-      masteryChecks
-    )}.</p>
-    <h3>אכיפה והשלכות</h3>
-    <p>שימוש ב-AI מחוץ לגבולות המותרים עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(
-      boundaryConsequences
-    )}. אי-דיווח על שימוש ב-AI עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(reportingConsequences)}.</p>
-    ${
-      equityBlock.length
-        ? `<h3>נקודות למחשבה עבור המרצה</h3><ul>${equityBlock
-            .map((text) => `<li>${escapeHtml(text)}</li>`)
-            .join("")}</ul>`
-        : ""
+  const addSection = (title, items) => {
+    if (!items.length) {
+      return;
     }
-  `.trim();
+
+    sections.push(`<h3>${title}</h3>`);
+    sections.push(...items.map((item) => `<p>${item}</p>`));
+  };
+
+  const rationaleItems = [];
+  if (goals) {
+    rationaleItems.push(`בקורס זה חשוב לנו במיוחד לקדם את התחומים הבאים: ${escapeHtml(goals)}.`);
+  }
+  if (aiSkills) {
+    rationaleItems.push(`אנו מעוניינים לעודד גם את המיומנויות הבאות בשימוש מושכל ב-AI: ${escapeHtml(aiSkills)}.`);
+  }
+  if (risks) {
+    rationaleItems.push(`חשוב לנו לצמצם פגיעה אפשרית בתחומים הבאים: ${escapeHtml(risks)}.`);
+  }
+  if (rationaleItems.length) {
+    rationaleItems.unshift("מטרת המדיניות היא לשמור על הלימה בין מטרות הקורס לבין אופן השימוש בכלי AI.");
+  }
+  addSection("רציונל", rationaleItems);
+
+  const boundaryItems = [];
+  if (allowedStages) {
+    boundaryItems.push(`השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${escapeHtml(allowedStages)}.`);
+  }
+  if (boundaryLevel) {
+    boundaryItems.push(`הקו המנחה המרכזי בקורס הוא: ${escapeHtml(boundaryLevel)}.`);
+  }
+  if (recommendedUses) {
+    boundaryItems.push(`דוגמאות לשימושים מומלצים בקורס: ${escapeHtml(recommendedUses)}.`);
+  }
+  if (recommendedTools) {
+    boundaryItems.push(`הכלים שאפשר לשקול לשימוש במסגרת הקורס הם: ${escapeHtml(recommendedTools)}.`);
+  }
+  addSection("גבולות הגזרה", boundaryItems);
+
+  const responsibilityItems = [];
+  if (studentResponsibility) {
+    responsibilityItems.push(escapeHtml(studentResponsibility));
+  }
+  if (verificationLevel) {
+    responsibilityItems.push(`רמת בדיקת האמינות המצופה מהסטודנטים היא: ${escapeHtml(verificationLevel)}.`);
+  }
+  if (privacyWarnings) {
+    responsibilityItems.push(`יש להקפיד על ההנחיות הבאות בנושאי פרטיות ואבטחת מידע: ${escapeHtml(privacyWarnings)}.`);
+  }
+  addSection("אחריות הסטודנט", responsibilityItems);
+
+  const transparencyItems = [];
+  if (reportingScope) {
+    transparencyItems.push(`כאשר נעשה שימוש ב-AI, הסטודנטים נדרשים לדווח לפחות על הפרטים הבאים: ${escapeHtml(reportingScope)}.`);
+  }
+  if (hasMeaningfulAnswer(answers.reporting_format)) {
+    if (answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link) {
+      transparencyItems.push(
+        policyLink
+          ? `קישור לתבנית הדיווח שנבחרה בקורס: <a href="${escapeHtml(policyLink)}" target="_blank" rel="noopener">${escapeHtml(
+              answers.reporting_format_link
+            )}</a>.`
+          : `קישור לתבנית הדיווח שנבחרה בקורס: ${escapeHtml(answers.reporting_format_link)}.`
+      );
+    } else if (answers.reporting_format === "תבנית הצהרת שימוש ב-AI במטלות") {
+      transparencyItems.push("הדיווח יתבצע באמצעות תבנית הצהרת שימוש ב-AI במטלות.");
+    }
+  }
+  if (reportingTiming) {
+    transparencyItems.push(`הדיווח נדרש במצבים הבאים: ${escapeHtml(reportingTiming)}.`);
+  }
+  if (citationGuidance) {
+    transparencyItems.push(`לעניין הפניה וציטוט של תוכן שנוצר על ידי AI: ${escapeHtml(citationGuidance)}.`);
+  }
+  if (masteryChecks) {
+    transparencyItems.push(`בקיאות הסטודנטים בחומר ובעבודה עשויה להיבדק גם באמצעות: ${escapeHtml(masteryChecks)}.`);
+  }
+  addSection("שקיפות וחובת דיווח", transparencyItems);
+
+  const enforcementItems = [];
+  if (boundaryConsequences) {
+    enforcementItems.push(`שימוש ב-AI מחוץ לגבולות המותרים עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(boundaryConsequences)}.`);
+  }
+  if (reportingConsequences) {
+    enforcementItems.push(`אי-דיווח על שימוש ב-AI עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(reportingConsequences)}.`);
+  }
+  addSection("אכיפה והשלכות", enforcementItems);
+
+  if (equityBlock.length) {
+    sections.push("<h3>נקודות למחשבה עבור המרצה</h3>");
+    sections.push(`<ul>${equityBlock.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}</ul>`);
+  }
+
+  return sections.join("\n");
 }
 
 function buildStudentSlide(answers) {
