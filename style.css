@@ -606,8 +606,60 @@ main > section:not(#builder) {
 }
 
 .policy-output {
-  white-space: pre-line;
   font-size: 1.08rem;
+}
+
+.policy-editor-shell {
+  border: 1px solid var(--color-neutral-3);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.policy-toolbar.ql-toolbar.ql-snow {
+  border: 0;
+  border-block-end: 1px solid var(--color-neutral-2);
+  background-color: var(--color-accent-light);
+}
+
+.policy-output.ql-container.ql-snow {
+  border: 0;
+  font-family: var(--font-body);
+}
+
+.policy-output .ql-editor {
+  min-block-size: 28rem;
+  direction: rtl;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+  line-height: 1.8;
+}
+
+.policy-output .ql-editor h2,
+.policy-output .ql-editor h3,
+.policy-output .ql-editor h4 {
+  color: var(--color-primary-dark);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  margin-block: 1.4rem 0.75rem;
+}
+
+.policy-output .ql-editor p,
+.policy-output .ql-editor li {
+  color: var(--color-text);
+}
+
+.policy-output .ql-editor a {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.policy-output .ql-editor.ql-blank::before {
+  color: var(--color-muted);
+  font-style: normal;
+  right: 1rem;
+  left: auto;
 }
 
 .copy-status {

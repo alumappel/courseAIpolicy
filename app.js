@@ -351,6 +351,7 @@ const copyPolicyButton = document.getElementById("copy-policy");
 const printPolicyButton = document.getElementById("print-policy");
 
 let reflectionModal;
+let policyEditor;
 
 function renderForm(config) {
   formSectionsEl.innerHTML = "";
@@ -922,6 +923,104 @@ ${equityBlock.map((text) => `- ${text}`).join("\n")}`
 `;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function sanitizeUrl(value) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value, window.location.href);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return url.href;
+    }
+  } catch (error) {
+    return "";
+  }
+
+  return "";
+}
+
+function buildPolicyHtml(answers) {
+  const goals = formatList(answers.course_goals);
+  const aiSkills = formatList(answers.ai_skills);
+  const risks = formatList(answers.skills_at_risk);
+  const allowedStages = formatList(answers.allowed_stages);
+  const boundaryLevel = answers.boundary_level || "המדיניות תיקבע לפי הנחיות הקורס והמטלות.";
+  const recommendedUses = formatList(answers.recommended_ai.recommended_uses);
+  const recommendedTools = formatList(answers.recommended_ai.recommended_tools);
+  const studentResponsibility = answers.student_responsibility || "לא הוגדר בשלב זה";
+  const verificationLevel = answers.verification_level || "לא הוגדר בשלב זה";
+  const privacyWarnings = formatList(answers.privacy_warnings);
+  const reportingScope = formatList(answers.reporting_scope);
+  const reportingTiming = formatList(answers.reporting_timing);
+  const masteryChecks = formatList(answers.mastery_checks);
+  const boundaryConsequences = formatList(answers.boundary_consequences);
+  const reportingConsequences = formatList(answers.reporting_consequences);
+  const policyLink = sanitizeUrl(answers.reporting_format_link);
+
+  const reportingFormat =
+    answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link
+      ? policyLink
+        ? `קישור לתבנית הדיווח שנבחרה בקורס: <a href="${escapeHtml(policyLink)}" target="_blank" rel="noopener">${escapeHtml(
+            answers.reporting_format_link
+          )}</a>.`
+        : `קישור לתבנית הדיווח שנבחרה בקורס: ${escapeHtml(answers.reporting_format_link)}.`
+      : "הדיווח יתבצע באמצעות תבנית הצהרת שימוש ב-AI במטלות.";
+
+  const citationText = answers.citation_guidance
+    ? `לעניין הפניה וציטוט של תוכן שנוצר על ידי AI: ${escapeHtml(answers.citation_guidance)}`
+    : "במקרים שבהם נעשה שימוש בתוכן שנוצר על ידי AI, הסטודנטים יידרשו לציין במפורש את הכלי, אופי השימוש והיקפו בהתאם להנחיות המטלה.";
+
+  const equityBlock = [answers.equity_paid_tools, answers.equity_support].filter(Boolean);
+
+  return `
+    <h2>מדיניות שימוש ב-AI בקורס</h2>
+    <h3>רציונל</h3>
+    <p>מטרת המדיניות היא לשמור על הלימה בין מטרות הקורס לבין אופן השימוש בכלי AI. בקורס זה חשוב לנו במיוחד לקדם את התחומים הבאים: ${escapeHtml(
+      goals
+    )}. לצד זאת, אנו מעוניינים לעודד גם את המיומנויות הבאות בשימוש מושכל ב-AI: ${escapeHtml(aiSkills)}. עם זאת, חשוב לנו לצמצם פגיעה אפשרית בתחומים הבאים: ${escapeHtml(
+      risks
+    )}.</p>
+    <h3>גבולות הגזרה</h3>
+    <p>השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${escapeHtml(
+      allowedStages
+    )}. הקו המנחה המרכזי בקורס הוא: ${escapeHtml(boundaryLevel)}. דוגמאות לשימושים מומלצים בקורס: ${escapeHtml(
+      recommendedUses
+    )}. הכלים שאפשר לשקול לשימוש במסגרת הקורס הם: ${escapeHtml(recommendedTools)}.</p>
+    <h3>אחריות הסטודנט</h3>
+    <p>${escapeHtml(studentResponsibility)}</p>
+    <p>רמת בדיקת האמינות המצופה מהסטודנטים היא: ${escapeHtml(
+      verificationLevel
+    )}. בנוסף, יש להקפיד על ההנחיות הבאות בנושאי פרטיות ואבטחת מידע: ${escapeHtml(privacyWarnings)}.</p>
+    <h3>שקיפות וחובת דיווח</h3>
+    <p>כאשר נעשה שימוש ב-AI, הסטודנטים נדרשים לדווח לפחות על הפרטים הבאים: ${escapeHtml(
+      reportingScope
+    )}. ${reportingFormat} הדיווח נדרש במצבים הבאים: ${escapeHtml(reportingTiming)}. ${citationText} בקיאות הסטודנטים בחומר ובעבודה עשויה להיבדק גם באמצעות: ${escapeHtml(
+      masteryChecks
+    )}.</p>
+    <h3>אכיפה והשלכות</h3>
+    <p>שימוש ב-AI מחוץ לגבולות המותרים עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(
+      boundaryConsequences
+    )}. אי-דיווח על שימוש ב-AI עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(reportingConsequences)}.</p>
+    ${
+      equityBlock.length
+        ? `<h3>נקודות למחשבה עבור המרצה</h3><ul>${equityBlock
+            .map((text) => `<li>${escapeHtml(text)}</li>`)
+            .join("")}</ul>`
+        : ""
+    }
+  `.trim();
+}
+
 function buildStudentSlide(answers) {
   const boundaryLine = answers.boundary_level || "המדיניות תיקבע לפי הנחיות הקורס והמטלות.";
   const allowedStages = takeTopItems(answers.allowed_stages, 3);
@@ -983,19 +1082,69 @@ function takeTopItems(listValue, limit) {
   return [String(listValue)];
 }
 
+function initPolicyEditor() {
+  if (policyEditor || !window.Quill || !policyOutputEl) {
+    return;
+  }
+
+  policyEditor = new window.Quill("#policy-output", {
+    theme: "snow",
+    placeholder: "כאן תוכלו לערוך את המדיניות שנוצרה, להדגיש, להוסיף קישורים ולעצב את הטקסט.",
+    modules: {
+      toolbar: "#policy-toolbar"
+    }
+  });
+}
+
+function setPolicyEditorContent(html) {
+  if (policyEditor) {
+    policyEditor.setContents([]);
+    policyEditor.clipboard.dangerouslyPasteHTML(html);
+    return;
+  }
+
+  policyOutputEl.innerHTML = html;
+}
+
+function getPolicyPlainText() {
+  if (policyEditor) {
+    return policyEditor.getText().trim();
+  }
+
+  return policyOutputEl.textContent.trim();
+}
+
+function getPolicyHtml() {
+  if (policyEditor) {
+    return policyEditor.root.innerHTML.trim();
+  }
+
+  return policyOutputEl.innerHTML.trim();
+}
+
 function scrollToResults() {
   resultsSection.hidden = false;
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function copyPolicyText() {
-  const text = policyOutputEl.textContent.trim();
+  const text = getPolicyPlainText();
+  const html = getPolicyHtml();
   if (!text) {
     return;
   }
 
   try {
-    await navigator.clipboard.writeText(text);
+    if (navigator.clipboard?.write && window.ClipboardItem) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/plain": new Blob([text], { type: "text/plain" }),
+          "text/html": new Blob([html], { type: "text/html" })
+        })
+      ]);
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
     copyStatusEl.textContent = "הטקסט הועתק ללוח.";
   } catch (error) {
     copyStatusEl.textContent = "לא הצלחנו להעתיק אוטומטית. אפשר לסמן ולהעתיק ידנית.";
@@ -1379,10 +1528,13 @@ function finishWizard(options = {}) {
   }
 
   const answers = collectAnswers();
-  const policyText = buildPolicyText(answers);
-  policyOutputEl.textContent = policyText;
+  const policyHtml = buildPolicyHtml(answers);
   buildStudentSlide(answers);
   scrollToResults();
+  if (!policyEditor) {
+    initPolicyEditor();
+  }
+  setPolicyEditorContent(policyHtml);
   builderStatusEl.textContent = "המדיניות הופקה בהצלחה.";
 
   if (reflectionModal) {
