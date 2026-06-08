@@ -263,7 +263,8 @@
             עליהן לאחר אישור.
             <br />
             <small class="text-muted d-block mt-2">
-              💡 התשובות והשינויים שלכם נשמרים אוטומטית בדפדפן המקומי שלכם (הנתונים אינם נשמרים בשרת ואינם משמשים למעקב).
+              🔒 התשובות והשינויים שלכם נשמרים אוטומטית בדפדפן המקומי שלכם (הנתונים אינם נשמרים בשרת ואינם משמשים
+              למעקב).
             </small>
           </p>
         </div>
@@ -285,7 +286,7 @@
           <p class="mb-0">כאן תמצאו גם נוסח מלא להעתקה וגם גרסת שקף תמציתית להצגה לסטודנטים.</p>
         </div>
         <div class="row g-4 align-items-stretch">
-          <div class="col-xl-7" id="editor-col">
+          <div class="col-12" id="editor-col">
             <div class="surface-card h-100 p-4">
               <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
                 <div>
@@ -339,10 +340,63 @@
               </div>
             </div>
           </div>
-          <div id="print-area" class="col-xl-5">
-            <div class="slide-preview h-100 d-flex flex-column gap-3 p-4" id="student-slide">
-              <span class="slide-pill">תקציר המדניות בקורס</span>
+          <div id="print-area" class="col-12 mt-5">
+            <!-- Slide Container Wrapper -->
+            <div id="slide-wrapper" class="d-none">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                  <h3 class="h4 mb-1">שקף מדיניות AI לסטודנטים</h3>
+                  <p class="mb-0 text-secondary-emphasis">שקף מעוצב להצגה לסטודנטים. ניתן לערוך את הטקסט בשקף באופן
+                    חופשי על ידי לחיצה עליו.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <button type="button" id="download-slide-image"
+                    class="btn btn-secondary d-inline-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                      class="bi bi-image" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
+                      <path
+                        d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z" />
+                    </svg>
+                    <span>הורדה כתמונה</span>
+                  </button>
+                  <button type="button" id="download-slide-pdf"
+                    class="btn btn-primary d-inline-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                      class="bi bi-file-earmark-pdf" viewBox="0 0 16 16" aria-hidden="true">
+                      <path
+                        d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 1.5L14 6h-4V1.5zM3 3.5A1.5 1.5 0 0 1 4.5 2h4v3.5a1 1 0 0 0 1 1h4v7.5a1 1 0 0 1-1 1H4.5A1.5 1.5 0 0 1 3 12.5v-9z" />
+                      <path d="M4.5 5a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-3z" />
+                    </svg>
+                    <span>ייצוא כ-PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="slide-preview-container position-relative">
+                <div class="slide-preview d-flex flex-column gap-3 p-4 p-md-5" id="student-slide">
+                  <!-- Content will be rendered dynamically -->
+                </div>
+              </div>
             </div>
+
+            <!-- Slide Empty State Warning -->
+            <div id="slide-empty-state" class="d-none">
+              <div
+                class="d-flex flex-column align-items-center justify-content-center text-center p-5 border border-dashed rounded-3"
+                style="background-color: var(--color-neutral-2); min-height: 250px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor"
+                  class="bi bi-exclamation-circle text-muted mb-3" viewBox="0 0 16 16">
+                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                  <path
+                    d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
+                </svg>
+                <h4 class="h5 mb-2 text-secondary-emphasis">השקף לסטודנטים עדיין לא מוכן</h4>
+                <p class="mb-0 text-muted" style="max-width: 450px;">עליך לענות על יותר שאלות כדי להשתמש בפיצ'ר יצירת
+                  שקף לסטודנטים.</p>
+              </div>
+            </div>
+
             <p class="print-only mt-3">הופק על ידי המרכז לקידום ההוראה ב-HIT</p>
           </div>
         </div>
@@ -398,8 +452,7 @@
         <div class="modal-header">
           <h2 class="modal-title h4 mb-0" id="reflectionModalLabel">האם המדיניות שנבחרה משפיעה גם על תכני הקורס ודרכי
             ההערכה?</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"
-            aria-label="סגירת החלון"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="סגירת החלון"></button>
         </div>
         <div class="modal-body" id="reflectionModalDescription">
           <p>
@@ -428,8 +481,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title h5 mb-0" id="resetConfirmModalLabel">להתחיל מחדש?</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"
-            aria-label="סגירת החלון"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="סגירת החלון"></button>
         </div>
         <div class="modal-body" id="resetConfirmModalDescription">
           <p class="mb-0">
@@ -437,7 +489,8 @@
           </p>
         </div>
         <div class="modal-footer justify-content-start gap-2 flex-wrap">
-          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">עצרו, אני רוצה לשמור את התשובות שלי</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">עצרו, אני רוצה לשמור את התשובות
+            שלי</button>
           <button type="button" class="btn btn-outline-danger" id="confirm-reset-btn">הבנתי, אפשר לאפס</button>
         </div>
       </div>
@@ -463,6 +516,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"></script>
   <script src="assets/vendor/quill/quill.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 

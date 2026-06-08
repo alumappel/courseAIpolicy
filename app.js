@@ -351,6 +351,15 @@ const resetConfirmModalEl = document.getElementById("resetConfirmModal");
 const copyPolicyButton = document.getElementById("copy-policy");
 const printPolicyButton = document.getElementById("print-policy");
 
+// New slide export variables
+const downloadSlideImageBtn = document.getElementById("download-slide-image");
+const downloadSlidePdfBtn = document.getElementById("download-slide-pdf");
+const slideWrapperEl = document.getElementById("slide-wrapper");
+const slideEmptyStateEl = document.getElementById("slide-empty-state");
+
+// Printing target control
+let printTarget = "policy";
+
 let reflectionModal;
 let resetConfirmModal;
 let policyEditor;
@@ -826,11 +835,11 @@ function renderValidationSummary(errors) {
     <p class="mb-2">אפשר לחזור אליהן דרך הקישורים הבאים, או לאשר בהמשך שתרצו לדלג עליהן:</p>
     <ul class="mb-0">
       ${errors
-        .map(
-          (error) =>
-            `<li><a class="summary-link" href="#${error.id}-block" data-focus-target="${error.id}-fieldset">${error.label}</a></li>`
-        )
-        .join("")}
+      .map(
+        (error) =>
+          `<li><a class="summary-link" href="#${error.id}-block" data-focus-target="${error.id}-fieldset">${error.label}</a></li>`
+      )
+      .join("")}
     </ul>
   `;
   validationSummaryEl.focus();
@@ -938,13 +947,12 @@ ${answers.student_responsibility}
 
 אכיפה והשלכות
 שימוש ב-AI מחוץ לגבולות המותרים עלול להוביל לאחת או יותר מההשלכות הבאות: ${boundaryConsequences}. אי-דיווח על שימוש ב-AI עלול להוביל לאחת או יותר מההשלכות הבאות: ${reportingConsequences}.
-${
-    equityBlock.length
+${equityBlock.length
       ? `
 נקודות למחשבה עבור המרצה
 ${equityBlock.map((text) => `- ${text}`).join("\n")}`
       : ""
-  }
+    }
 `;
   return text.replace(/::+/g, ":").replace(/\.\.+/g, ".");
 }
@@ -1114,8 +1122,8 @@ function buildPolicyHtml(answers) {
       transparencyItems.push(
         policyLink
           ? `קישור לתבנית הדיווח שנבחרה בקורס: <a href="${escapeHtml(policyLink)}" target="_blank" rel="noopener">${escapeHtml(
-              answers.reporting_format_link
-            )}</a>.`
+            answers.reporting_format_link
+          )}</a>.`
           : `קישור לתבנית הדיווח שנבחרה בקורס: ${escapeHtml(answers.reporting_format_link)}.`
       );
     } else if (answers.reporting_format === "תבנית הצהרת שימוש ב-AI במטלות") {
@@ -1150,100 +1158,203 @@ function buildPolicyHtml(answers) {
   return sections.join("\n").replace(/::+/g, ":").replace(/\.\.+/g, ".");
 }
 
-function buildStudentSlide(answers) {
-  const hasBoundary = hasMeaningfulAnswer(answers.boundary_level);
-  const hasAllowed = hasMeaningfulAnswer(answers.allowed_stages);
-  const hasRecommended = hasMeaningfulAnswer(answers.recommended_ai?.recommended_uses);
-  const hasReporting = hasMeaningfulAnswer(answers.reporting_scope);
-  const hasConsequences = hasMeaningfulAnswer(answers.boundary_consequences);
+function buildStudentSlide(answers, forceRegenerate = false) {
+  const slideWrapper = document.getElementById("slide-wrapper");
+  const slideEmptyState = document.getElementById("slide-empty-state");
 
-  const hasAnyContent = hasBoundary || hasAllowed || hasRecommended || hasReporting || hasConsequences;
+  // 1. Check if we have manually edited slide html in localStorage and are NOT forcing regeneration
+  try {
+    const savedSlideHtml = localStorage.getItem("hit_policy_edited_slide_html");
+    if (savedSlideHtml && !forceRegenerate) {
+      if (slideWrapper) slideWrapper.classList.remove("d-none");
+      if (slideEmptyState) slideEmptyState.classList.add("d-none");
 
-  const printArea = document.getElementById("print-area");
-  const editorCol = document.getElementById("editor-col");
+      studentSlideEl.innerHTML = savedSlideHtml;
 
-  if (!hasAnyContent) {
-    if (printArea) {
-      printArea.classList.add("d-none");
+      setupSlideEditListeners();
+      return;
     }
-    if (editorCol) {
-      editorCol.classList.remove("col-xl-7");
-      editorCol.classList.add("col-xl-12");
-    }
+  } catch (e) {
+    console.warn("Error loading saved slide html from localStorage:", e);
+  }
+
+  // 2. Gather values and check which of the 6 sections have meaningful content
+  const goals = formatList(answers.course_goals);
+  const aiSkills = formatList(answers.ai_skills);
+  const risks = formatList(answers.skills_at_risk);
+  const allowedStages = formatList(answers.allowed_stages);
+  const boundaryLevel = cleanValue(answers.boundary_level);
+  const recommendedUses = formatList(answers.recommended_ai?.recommended_uses);
+  const recommendedTools = formatList(answers.recommended_ai?.recommended_tools);
+  const studentResponsibility = cleanValue(answers.student_responsibility);
+  const verificationLevel = cleanValue(answers.verification_level);
+  const privacyWarnings = formatList(answers.privacy_warnings);
+  const reportingScope = formatList(answers.reporting_scope);
+  const reportingFormat = answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link
+    ? `קישור לתבנית הדיווח: ${answers.reporting_format_link}`
+    : (answers.reporting_format === "תבנית הצהרת שימוש ב-AI במטלות" ? "באמצעות תבנית הצהרת שימוש ב-AI במטלות." : "");
+  const reportingTiming = formatList(answers.reporting_timing);
+  const citationText = answers.citation_guidance ? cleanValue(answers.citation_guidance) : "";
+  const masteryChecks = formatList(answers.mastery_checks);
+  const boundaryConsequences = formatList(answers.boundary_consequences);
+  const reportingConsequences = formatList(answers.reporting_consequences);
+  const equityPaidTools = answers.equity_paid_tools ? cleanValue(answers.equity_paid_tools) : "";
+  const equitySupport = answers.equity_support ? cleanValue(answers.equity_support) : "";
+
+  const hasRationale = hasMeaningfulAnswer(answers.course_goals) || hasMeaningfulAnswer(answers.ai_skills) || hasMeaningfulAnswer(answers.skills_at_risk);
+  const hasBoundaries = hasMeaningfulAnswer(answers.boundary_level) || hasMeaningfulAnswer(answers.allowed_stages) || hasMeaningfulAnswer(answers.recommended_ai?.recommended_uses) || hasMeaningfulAnswer(answers.recommended_ai?.recommended_tools);
+  const hasResponsibility = hasMeaningfulAnswer(answers.student_responsibility) || hasMeaningfulAnswer(answers.verification_level) || hasMeaningfulAnswer(answers.privacy_warnings);
+  const hasTransparency = hasMeaningfulAnswer(answers.reporting_scope) || hasMeaningfulAnswer(answers.reporting_timing) || hasMeaningfulAnswer(answers.citation_guidance) || hasMeaningfulAnswer(answers.mastery_checks);
+  const hasEnforcement = hasMeaningfulAnswer(answers.boundary_consequences) || hasMeaningfulAnswer(answers.reporting_consequences);
+  const hasEquity = hasMeaningfulAnswer(answers.equity_paid_tools) || hasMeaningfulAnswer(answers.equity_support);
+
+  const totalFilledSections = [hasRationale, hasBoundaries, hasResponsibility, hasTransparency, hasEnforcement, hasEquity].filter(Boolean).length;
+
+  // 3. Handle Empty State (< 2 sections filled)
+  if (totalFilledSections < 2) {
+    if (slideWrapper) slideWrapper.classList.add("d-none");
+    if (slideEmptyState) slideEmptyState.classList.remove("d-none");
     return;
   }
 
-  if (printArea) {
-    printArea.classList.remove("d-none");
-  }
-  if (editorCol) {
-    editorCol.classList.remove("col-xl-12");
-    editorCol.classList.add("col-xl-7");
-  }
+  if (slideWrapper) slideWrapper.classList.remove("d-none");
+  if (slideEmptyState) slideEmptyState.classList.add("d-none");
 
-  let html = `
-    <span class="slide-pill">מדיניות AI בקורס</span>
-    <h3 class="display-6">מה חשוב לדעת?</h3>
-    <p class="mb-0">השימוש ב-AI נועד לתמוך בלמידה, אבל אינו מחליף אחריות אישית, דיוק אקדמי ושקיפות.</p>
-  `;
+  // 4. Build slide HTML
+  let cardsHtml = "";
 
-  if (hasBoundary) {
-    const boundaryLine = cleanValue(answers.boundary_level);
-    html += `
-      <div>
-        <h4 class="h5">גבולות השימוש</h4>
-        <p class="mb-0">${boundaryLine}</p>
+  // Section 1: הרציונל
+  if (hasRationale) {
+    let bullets = "";
+    if (hasMeaningfulAnswer(answers.course_goals)) bullets += `<li>מיומנויות לקידום: ${goals}</li>`;
+    if (hasMeaningfulAnswer(answers.ai_skills)) bullets += `<li>מיומנויות AI שנרכוש: ${aiSkills}</li>`;
+    if (hasMeaningfulAnswer(answers.skills_at_risk)) bullets += `<li>שמירה מפני פגיעה ב: ${risks}</li>`;
+
+    cardsHtml += `
+      <div class="slide-card">
+        <h4>הרציונל לקורס</h4>
+        <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  if (hasAllowed) {
-    const allowedStages = takeTopItems(answers.allowed_stages, 3);
-    html += `
-      <div>
-        <h4 class="h5">איפה אפשר להיעזר ב-AI?</h4>
-        <ul>${allowedStages.map((item) => `<li>${item}</li>`).join("")}</ul>
+  // Section 2: גבולות הגזרה
+  if (hasBoundaries) {
+    let bullets = "";
+    if (boundaryLevel) bullets += `<li>קו מנחה: ${boundaryLevel}</li>`;
+    if (hasMeaningfulAnswer(answers.allowed_stages)) bullets += `<li>מותר להיעזר בשלבים: ${allowedStages}</li>`;
+    if (hasMeaningfulAnswer(answers.recommended_ai?.recommended_uses)) bullets += `<li>שימושים מומלצים: ${recommendedUses}</li>`;
+    if (hasMeaningfulAnswer(answers.recommended_ai?.recommended_tools)) bullets += `<li>כלים מומלצים: ${recommendedTools}</li>`;
+
+    cardsHtml += `
+      <div class="slide-card">
+        <h4>גבולות הגזרה</h4>
+        <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  if (hasRecommended) {
-    const recommendedUses = takeTopItems(answers.recommended_ai.recommended_uses, 4);
-    html += `
-      <div>
-        <h4 class="h5">שימושים מומלצים</h4>
-        <ul>${recommendedUses.map((item) => `<li>${item}</li>`).join("")}</ul>
+  // Section 3: אחריות הסטודנט
+  if (hasResponsibility) {
+    let bullets = "";
+    if (studentResponsibility) bullets += `<li>אחריות אישית: ${studentResponsibility}</li>`;
+    if (verificationLevel) bullets += `<li>אימות מידע: נדרש לבדוק לפי ${verificationLevel}</li>`;
+    if (hasMeaningfulAnswer(answers.privacy_warnings)) bullets += `<li>פרטיות ואבטחה: ${privacyWarnings}</li>`;
+
+    cardsHtml += `
+      <div class="slide-card">
+        <h4>אחריות הסטודנט</h4>
+        <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  if (hasReporting) {
-    const reportingScope = takeTopItems(answers.reporting_scope, 4);
-    html += `
-      <div>
-        <h4 class="h5">מה צריך לדווח?</h4>
-        <ul>${reportingScope.map((item) => `<li>${item}</li>`).join("")}</ul>
+  // Section 4: שקיפות וחובת דיווח
+  if (hasTransparency) {
+    let bullets = "";
+    if (hasMeaningfulAnswer(answers.reporting_scope)) bullets += `<li>פרטים לדיווח: ${reportingScope}</li>`;
+    if (reportingFormat) bullets += `<li>אופן הדיווח: ${reportingFormat}</li>`;
+    if (hasMeaningfulAnswer(answers.reporting_timing)) bullets += `<li>מתי מדווחים: ${reportingTiming}</li>`;
+    if (citationText) bullets += `<li>הנחיות ציטוט: ${citationText}</li>`;
+    if (hasMeaningfulAnswer(answers.mastery_checks)) bullets += `<li>בדיקת בקיאות: ${masteryChecks}</li>`;
+
+    cardsHtml += `
+      <div class="slide-card">
+        <h4>שקיפות וחובת דיווח</h4>
+        <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  if (hasConsequences) {
-    const consequences = takeTopItems(answers.boundary_consequences, 3);
-    html += `
-      <div>
-        <h4 class="h5">אם חורגים מהמדיניות</h4>
-        <ul>${consequences.map((item) => `<li>${item}</li>`).join("")}</ul>
+  // Section 5: אכיפה והשלכות
+  if (hasEnforcement) {
+    let bullets = "";
+    if (hasMeaningfulAnswer(answers.boundary_consequences)) bullets += `<li>שימוש מחוץ לגבולות: ${boundaryConsequences}</li>`;
+    if (hasMeaningfulAnswer(answers.reporting_consequences)) bullets += `<li>אי-דיווח על שימוש: ${reportingConsequences}</li>`;
+
+    cardsHtml += `
+      <div class="slide-card">
+        <h4>אכיפה והשלכות</h4>
+        <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  html += `
-    <div class="slide-footer">
-      <p class="mb-0">הסטודנטים אחראים לבדוק אמינות, לשמור על פרטיות, ולדווח על כל שימוש רלוונטי ב-AI.</p>
+  // Section 6: שוויון ונגישות
+  if (hasEquity) {
+    let bullets = "";
+    if (equityPaidTools) bullets += `<li>גישה וכלים בתשלום: ${equityPaidTools}</li>`;
+    if (equitySupport) bullets += `<li>פערי אוריינות: ${equitySupport}</li>`;
+
+    cardsHtml += `
+      <div class="slide-card">
+        <h4>שוויון ונגישות</h4>
+        <ul>${bullets}</ul>
+      </div>
+    `;
+  }
+
+  const generatedHtml = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="slide-pill">מדיניות AI בקורס</span>
+      <span class="slide-edit-badge">✍️ השקף עריך - לחצו לעריכה</span>
+    </div>
+    <div id="slide-editable-content" contenteditable="true" spellcheck="false" class="editable-slide-content">
+      <h3 class="display-6 mb-2">מדיניות AI בקורס</h3>
+      <p class="mb-4 text-white-50">הנחיות וכללי שימוש בכלים חכמים לסטודנטים ולסטודנטיות בקורס.</p>
+      <div class="slide-grid">
+        ${cardsHtml}
+      </div>
+    </div>
+    <div class="slide-footer mt-auto">
+      <p class="mb-0 text-white-50 text-center">נבנה באמצעות כלי עזר למדיניות שימוש ב-AI בקורס | HIT המרכז לקידום ההוראה</p>
     </div>
   `;
 
-  studentSlideEl.innerHTML = html;
+  studentSlideEl.innerHTML = generatedHtml;
+
+  // Save the generated slide html to localStorage
+  try {
+    localStorage.setItem("hit_policy_edited_slide_html", generatedHtml);
+  } catch (e) { }
+
+  setupSlideEditListeners();
+}
+
+function setupSlideEditListeners() {
+  const slideContent = document.getElementById("slide-editable-content");
+  if (slideContent) {
+    const saveEdit = () => {
+      try {
+        localStorage.setItem("hit_policy_edited_slide_html", studentSlideEl.innerHTML);
+      } catch (e) {
+        console.warn("Error saving edited slide html to localStorage:", e);
+      }
+    };
+
+    slideContent.addEventListener("input", saveEdit);
+    slideContent.addEventListener("blur", saveEdit);
+  }
 }
 
 function formatList(listValue) {
@@ -1314,6 +1425,7 @@ function clearStateFromLocalStorage() {
     localStorage.removeItem("hit_policy_skipped");
     localStorage.removeItem("hit_policy_edited_html");
     localStorage.removeItem("hit_policy_completed");
+    localStorage.removeItem("hit_policy_edited_slide_html");
   } catch (error) {
     console.warn("Unable to clear state from localStorage:", error);
   }
@@ -1532,10 +1644,10 @@ function renderWizard() {
 
 function showQuestion(index, options = {}) {
   state.currentQuestionIndex = Math.min(Math.max(index, 0), state.wizardQuestions.length - 1);
-  
+
   try {
     localStorage.setItem("hit_policy_current_index", String(state.currentQuestionIndex));
-  } catch (e) {}
+  } catch (e) { }
 
   const page = state.wizardQuestions[state.currentQuestionIndex];
   const questionMount = document.getElementById("wizard-question");
@@ -1896,7 +2008,7 @@ function finishWizard(options = {}) {
 
   const answers = collectAnswers();
   const policyHtml = buildPolicyHtml(answers);
-  buildStudentSlide(answers);
+  buildStudentSlide(answers, true);
   scrollToResults();
   if (!policyEditor) {
     initPolicyEditor();
@@ -1907,7 +2019,7 @@ function finishWizard(options = {}) {
   try {
     localStorage.setItem("hit_policy_completed", "true");
     localStorage.setItem("hit_policy_edited_html", policyHtml);
-  } catch (e) {}
+  } catch (e) { }
 
   if (reflectionModal) {
     reflectionModal.show();
@@ -1976,9 +2088,9 @@ function setupNavHighlight() {
 
 function init() {
   state.wizardQuestions = flattenQuestions(formConfig);
-  
+
   loadStateFromLocalStorage();
-  
+
   renderWizard();
   setupSummaryLinks();
   setupGuidelineObserver();
@@ -2001,7 +2113,7 @@ function init() {
         setPolicyEditorContent(savedHtml);
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (resetConfirmModalEl && window.bootstrap?.Modal) {
     resetConfirmModal = new window.bootstrap.Modal(resetConfirmModalEl);
@@ -2017,23 +2129,71 @@ function init() {
     });
   }
 
+  if (downloadSlideImageBtn) {
+    downloadSlideImageBtn.addEventListener("click", downloadSlideAsImage);
+  }
+  if (downloadSlidePdfBtn) {
+    downloadSlidePdfBtn.addEventListener("click", downloadSlideAsPdf);
+  }
+
   policyForm.addEventListener("submit", handleSubmit);
   copyPolicyButton.addEventListener("click", copyPolicyText);
-  printPolicyButton.addEventListener("click", () => window.print());
+  printPolicyButton.addEventListener("click", () => {
+    printTarget = "policy";
+    window.print();
+  });
 
   window.addEventListener("beforeprint", () => {
     const printContainer = document.getElementById("policy-print-container");
     if (printContainer) {
-      printContainer.innerHTML = getPolicyHtml();
+      if (printTarget === "slide") {
+        document.body.classList.add("printing-slide");
+        const slideContent = document.getElementById("student-slide");
+        if (slideContent) {
+          printContainer.innerHTML = slideContent.innerHTML;
+        }
+      } else {
+        printContainer.innerHTML = getPolicyHtml();
+      }
     }
   });
 
   window.addEventListener("afterprint", () => {
+    document.body.classList.remove("printing-slide");
     const printContainer = document.getElementById("policy-print-container");
     if (printContainer) {
       printContainer.innerHTML = "";
     }
+    printTarget = "policy";
   });
+}
+
+function downloadSlideAsImage() {
+  const slideEl = document.getElementById("student-slide");
+  if (!slideEl || !window.html2canvas) {
+    return;
+  }
+
+  window.html2canvas(slideEl, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: null,
+    logging: false
+  }).then((canvas) => {
+    const imgData = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = imgData;
+    link.download = "מדיניות_AI_קורס_שקף.png";
+    link.click();
+  }).catch((err) => {
+    console.error("Error generating slide image:", err);
+    alert("מצטערים, אירעה שגיאה ביצירת קובץ התמונה.");
+  });
+}
+
+function downloadSlideAsPdf() {
+  printTarget = "slide";
+  window.print();
 }
 
 init();
