@@ -76,7 +76,7 @@ const formConfig = [
         label: "באילו שלבים בקורס מותר ואף מומלץ להיעזר בבינה מלאכותית?",
         type: "checkbox",
         required: true,
-        options: ["שיעורים או תרגולים מסוימים", "מטלת האמצע", "מטלה מסכמת", "למידה עצמית בין המפגשים"],
+        options: ["במהלך השיעורים והתרגולים בקורס", "מטלת האמצע", "מטלה מסכמת", "למידה עצמית בין המפגשים"],
         allowOther: true,
         otherLabel: "אחר"
       },
@@ -90,7 +90,7 @@ const formConfig = [
           "רמה 1: איסור מוחלט – אין לעשות שימוש ב-AI באף חלק בקורס, לרבות למידה עצמית על החומר.",
           "רמה 2: שימוש כעוזר למידה בלבד – הסבר מושגים, תרגום וסיעור מוחות, ללא שילוב תוצרי AI בעבודות להגשה.",
           "רמה 3: שילוב מבוקר – מותר להשתמש לעריכה לשונית, איסוף מידע והפקת חלקי תוצרים תוך דיווח וביקורת.",
-          "רמה 4: שימוש חופשי ואף חובה – מומלץ לבצע שימוש נרחב ב-AI בקורס תוך דיווח, ביקורת ושיקול דעת."
+          "רמה 4: אין הגבלה על שימוש בAI בקורס – מומלץ ונדרש לבצע שימוש נרחב ב-AI בקורס תוך דיווח, ביקורת ושיקול דעת."
         ],
         allowOther: true,
         otherLabel: "אני רוצה להגדיר לבד"
@@ -212,7 +212,7 @@ const formConfig = [
           "תיעוד שיחה מלא או לינק לשיחה",
           "השלב במטלה או בקורס שבו נעשה השימוש",
           "תהליך בדיקת האמינות שנעשה",
-          "רפלקציה על השימוש"
+          "רפלקציה על השימוש בהתאם לשאלות מנחות שינתנו בכיתה"
         ],
         allowOther: true,
         otherLabel: "אחר"
@@ -276,7 +276,7 @@ const formConfig = [
     sectionId: "enforcement",
     sectionTitle: "5. אכיפה והשלכות",
     intro:
-      "אחרי שהגדרנו את גבולות הגזרה, חשוב לשקף לסטודנטים את ההשלכות של אי-עמידה בהן, תוך התאמה לנהלי המכון והפקולטה.",
+      "אחרי שהגדרנו את גבולות הגזרה, חשוב לשקף לסטודנטים את ההשלכות של אי-עמידה בהן, <strong>תוך התאמה לנהלי המכון והפקולטה</strong>.",
     questions: [
       {
         id: "boundary_consequences",
@@ -896,13 +896,13 @@ function buildPolicyText(answers) {
 
   const equityBlock = [answers.equity_paid_tools, answers.equity_support].filter(Boolean);
 
-  return `מדיניות שימוש ב-AI בקורס
+  const text = `מדיניות שימוש ב-AI בקורס
 
 רציונל
 מטרת המדיניות היא לשמור על הלימה בין מטרות הקורס לבין אופן השימוש בכלי AI. בקורס זה חשוב לנו במיוחד לקדם את התחומים הבאים: ${goals}. לצד זאת, אנו מעוניינים לעודד גם את המיומנויות הבאות בשימוש מושכל ב-AI: ${aiSkills}. עם זאת, חשוב לנו לצמצם פגיעה אפשרית בתחומים הבאים: ${risks}.
 
 גבולות הגזרה
-השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${allowedStages}. הקו המנחה המרכזי בקורס הוא: ${answers.boundary_level}. דוגמאות לשימושים מומלצים בקורס: ${recommendedUses}. הכלים שאפשר לשקול לשימוש במסגרת הקורס הם: ${recommendedTools}.
+השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${allowedStages}. הקו המנחה המרכזי בקורס הוא: ${answers.boundary_level}. דוגמאות לשימושים מומלצים בקורס: ${recommendedUses}. הכלים המומלצים לשימוש במסגרת הקורס הם: ${recommendedTools}.
 
 אחריות הסטודנט
 ${answers.student_responsibility}
@@ -921,6 +921,7 @@ ${equityBlock.map((text) => `- ${text}`).join("\n")}`
       : ""
   }
 `;
+  return text.replace(/::+/g, ":").replace(/\.\.+/g, ".");
 }
 
 function escapeHtml(value) {
@@ -930,6 +931,17 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function cleanValue(val) {
+  if (typeof val === "string") {
+    let cleaned = val.replace(/^נוסח מוצע:\s*/, "");
+    cleaned = cleaned.replace(/^רמה \d+:\s*/, "");
+    cleaned = cleaned.replace(/::+/g, ":");
+    cleaned = cleaned.replace(/\.\.+/g, ".");
+    return cleaned.trim();
+  }
+  return val;
 }
 
 function hasMeaningfulAnswer(value) {
@@ -954,10 +966,29 @@ function getAnswerText(value) {
   }
 
   if (Array.isArray(value)) {
-    return value.join(", ");
+    const cleaned = value.map(val => escapeHtml(cleanValue(val)));
+    if (cleaned.length > 3) {
+      return `<ul>${cleaned.map(item => `<li>${item}</li>`).join("")}</ul>`;
+    } else if (cleaned.length >= 2) {
+      return cleaned.slice(0, -1).join(", ") + " ו" + cleaned[cleaned.length - 1];
+    } else {
+      return cleaned[0];
+    }
   }
 
-  return String(value).trim();
+  return escapeHtml(cleanValue(String(value)));
+}
+
+function renderHtmlParagraph(text) {
+  if (text.includes("<ul>")) {
+    const parts = text.split("<ul>");
+    const intro = parts[0].trim();
+    const list = "<ul>" + parts[1];
+    const cleanIntro = intro.endsWith(".") || intro.endsWith(":") ? intro : intro + ":";
+    const cleanList = list.replace(/\.\s*<\/p>$/, "</p>").replace(/\.\s*$/, "");
+    return `<p>${cleanIntro}</p>${cleanList}`;
+  }
+  return `<p>${text}</p>`;
 }
 
 function sanitizeUrl(value) {
@@ -1004,18 +1035,18 @@ function buildPolicyHtml(answers) {
     }
 
     sections.push(`<h3>${title}</h3>`);
-    sections.push(...items.map((item) => `<p>${item}</p>`));
+    sections.push(...items.map((item) => renderHtmlParagraph(item)));
   };
 
   const rationaleItems = [];
   if (goals) {
-    rationaleItems.push(`בקורס זה חשוב לנו במיוחד לקדם את התחומים הבאים: ${escapeHtml(goals)}.`);
+    rationaleItems.push(`בקורס זה חשוב לנו במיוחד לקדם את התחומים הבאים: ${goals}.`);
   }
   if (aiSkills) {
-    rationaleItems.push(`אנו מעוניינים לעודד גם את המיומנויות הבאות בשימוש מושכל ב-AI: ${escapeHtml(aiSkills)}.`);
+    rationaleItems.push(`אנו מעוניינים לעודד גם את המיומנויות הבאות בשימוש מושכל ב-AI: ${aiSkills}.`);
   }
   if (risks) {
-    rationaleItems.push(`חשוב לנו לצמצם פגיעה אפשרית בתחומים הבאים: ${escapeHtml(risks)}.`);
+    rationaleItems.push(`חשוב לנו לצמצם פגיעה אפשרית בתחומים הבאים: ${risks}.`);
   }
   if (rationaleItems.length) {
     rationaleItems.unshift("מטרת המדיניות היא לשמור על הלימה בין מטרות הקורס לבין אופן השימוש בכלי AI.");
@@ -1024,34 +1055,34 @@ function buildPolicyHtml(answers) {
 
   const boundaryItems = [];
   if (allowedStages) {
-    boundaryItems.push(`השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${escapeHtml(allowedStages)}.`);
+    boundaryItems.push(`השימוש ב-AI מותר ואף מומלץ בעיקר בשלבים או בהקשרים הבאים: ${allowedStages}.`);
   }
   if (boundaryLevel) {
-    boundaryItems.push(`הקו המנחה המרכזי בקורס הוא: ${escapeHtml(boundaryLevel)}.`);
+    boundaryItems.push(`הקו המנחה המרכזי בקורס הוא: ${boundaryLevel}.`);
   }
   if (recommendedUses) {
-    boundaryItems.push(`דוגמאות לשימושים מומלצים בקורס: ${escapeHtml(recommendedUses)}.`);
+    boundaryItems.push(`דוגמאות לשימושים מומלצים בקורס: ${recommendedUses}.`);
   }
   if (recommendedTools) {
-    boundaryItems.push(`הכלים שאפשר לשקול לשימוש במסגרת הקורס הם: ${escapeHtml(recommendedTools)}.`);
+    boundaryItems.push(`הכלים המומלצים לשימוש במסגרת הקורס הם: ${recommendedTools}.`);
   }
   addSection("גבולות הגזרה", boundaryItems);
 
   const responsibilityItems = [];
   if (studentResponsibility) {
-    responsibilityItems.push(escapeHtml(studentResponsibility));
+    responsibilityItems.push(studentResponsibility);
   }
   if (verificationLevel) {
-    responsibilityItems.push(`רמת בדיקת האמינות המצופה מהסטודנטים היא: ${escapeHtml(verificationLevel)}.`);
+    responsibilityItems.push(`רמת בדיקת האמינות המצופה מהסטודנטים היא: ${verificationLevel}.`);
   }
   if (privacyWarnings) {
-    responsibilityItems.push(`יש להקפיד על ההנחיות הבאות בנושאי פרטיות ואבטחת מידע: ${escapeHtml(privacyWarnings)}.`);
+    responsibilityItems.push(`יש להקפיד על ההנחיות הבאות בנושאי פרטיות ואבטחת מידע: ${privacyWarnings}.`);
   }
   addSection("אחריות הסטודנט", responsibilityItems);
 
   const transparencyItems = [];
   if (reportingScope) {
-    transparencyItems.push(`כאשר נעשה שימוש ב-AI, הסטודנטים נדרשים לדווח לפחות על הפרטים הבאים: ${escapeHtml(reportingScope)}.`);
+    transparencyItems.push(`כאשר נעשה שימוש ב-AI, הסטודנטים נדרשים לדווח לפחות על הפרטים הבאים: ${reportingScope}.`);
   }
   if (hasMeaningfulAnswer(answers.reporting_format)) {
     if (answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link) {
@@ -1063,26 +1094,26 @@ function buildPolicyHtml(answers) {
           : `קישור לתבנית הדיווח שנבחרה בקורס: ${escapeHtml(answers.reporting_format_link)}.`
       );
     } else if (answers.reporting_format === "תבנית הצהרת שימוש ב-AI במטלות") {
-      transparencyItems.push("הדיווח יתבצע באמצעות תבנית הצהרת שימוש ב-AI במטלות.");
+      transparencyItems.push('הדיווח יתבצע באמצעות <a href="assets/files/הצהרה על שימוש בכלי בינה מלאכותית במטלות.docx" target="_blank" rel="noopener">תבנית הצהרת שימוש ב-AI במטלות</a>.');
     }
   }
   if (reportingTiming) {
-    transparencyItems.push(`הדיווח נדרש במצבים הבאים: ${escapeHtml(reportingTiming)}.`);
+    transparencyItems.push(`הדיווח נדרש במצבים הבאים: ${reportingTiming}.`);
   }
   if (citationGuidance) {
-    transparencyItems.push(`לעניין הפניה וציטוט של תוכן שנוצר על ידי AI: ${escapeHtml(citationGuidance)}.`);
+    transparencyItems.push(`לעניין הפניה וציטוט של תוכן שנוצר על ידי AI: ${citationGuidance}.`);
   }
   if (masteryChecks) {
-    transparencyItems.push(`בקיאות הסטודנטים בחומר ובעבודה עשויה להיבדק גם באמצעות: ${escapeHtml(masteryChecks)}.`);
+    transparencyItems.push(`בקיאות הסטודנטים בחומר ובעבודה עשויה להיבדק גם באמצעות: ${masteryChecks}.`);
   }
   addSection("שקיפות וחובת דיווח", transparencyItems);
 
   const enforcementItems = [];
   if (boundaryConsequences) {
-    enforcementItems.push(`שימוש ב-AI מחוץ לגבולות המותרים עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(boundaryConsequences)}.`);
+    enforcementItems.push(`שימוש ב-AI מחוץ לגבולות המותרים עלול להוביל לאחת או יותר מההשלכות הבאות: ${boundaryConsequences}.`);
   }
   if (reportingConsequences) {
-    enforcementItems.push(`אי-דיווח על שימוש ב-AI עלול להוביל לאחת או יותר מההשלכות הבאות: ${escapeHtml(reportingConsequences)}.`);
+    enforcementItems.push(`אי-דיווח על שימוש ב-AI עלול להוביל לאחת או יותר מההשלכות הבאות: ${reportingConsequences}.`);
   }
   addSection("אכיפה והשלכות", enforcementItems);
 
@@ -1091,44 +1122,103 @@ function buildPolicyHtml(answers) {
     sections.push(`<ul>${equityBlock.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}</ul>`);
   }
 
-  return sections.join("\n");
+  return sections.join("\n").replace(/::+/g, ":").replace(/\.\.+/g, ".");
 }
 
 function buildStudentSlide(answers) {
-  const boundaryLine = answers.boundary_level || "המדיניות תיקבע לפי הנחיות הקורס והמטלות.";
-  const allowedStages = takeTopItems(answers.allowed_stages, 3);
-  const recommendedUses = takeTopItems(answers.recommended_ai.recommended_uses, 4);
-  const reportingScope = takeTopItems(answers.reporting_scope, 4);
-  const consequences = takeTopItems(answers.boundary_consequences, 3);
+  const hasBoundary = hasMeaningfulAnswer(answers.boundary_level);
+  const hasAllowed = hasMeaningfulAnswer(answers.allowed_stages);
+  const hasRecommended = hasMeaningfulAnswer(answers.recommended_ai?.recommended_uses);
+  const hasReporting = hasMeaningfulAnswer(answers.reporting_scope);
+  const hasConsequences = hasMeaningfulAnswer(answers.boundary_consequences);
 
-  studentSlideEl.innerHTML = `
+  const hasAnyContent = hasBoundary || hasAllowed || hasRecommended || hasReporting || hasConsequences;
+
+  const printArea = document.getElementById("print-area");
+  const editorCol = document.getElementById("editor-col");
+
+  if (!hasAnyContent) {
+    if (printArea) {
+      printArea.classList.add("d-none");
+    }
+    if (editorCol) {
+      editorCol.classList.remove("col-xl-7");
+      editorCol.classList.add("col-xl-12");
+    }
+    return;
+  }
+
+  if (printArea) {
+    printArea.classList.remove("d-none");
+  }
+  if (editorCol) {
+    editorCol.classList.remove("col-xl-12");
+    editorCol.classList.add("col-xl-7");
+  }
+
+  let html = `
     <span class="slide-pill">מדיניות AI בקורס</span>
     <h3 class="display-6">מה חשוב לדעת?</h3>
     <p class="mb-0">השימוש ב-AI נועד לתמוך בלמידה, אבל אינו מחליף אחריות אישית, דיוק אקדמי ושקיפות.</p>
-    <div>
-      <h4 class="h5">גבולות השימוש</h4>
-      <p class="mb-0">${boundaryLine}</p>
-    </div>
-    <div>
-      <h4 class="h5">איפה אפשר להיעזר ב-AI?</h4>
-      <ul>${allowedStages.map((item) => `<li>${item}</li>`).join("")}</ul>
-    </div>
-    <div>
-      <h4 class="h5">שימושים מומלצים</h4>
-      <ul>${recommendedUses.map((item) => `<li>${item}</li>`).join("")}</ul>
-    </div>
-    <div>
-      <h4 class="h5">מה צריך לדווח?</h4>
-      <ul>${reportingScope.map((item) => `<li>${item}</li>`).join("")}</ul>
-    </div>
-    <div>
-      <h4 class="h5">אם חורגים מהמדיניות</h4>
-      <ul>${consequences.map((item) => `<li>${item}</li>`).join("")}</ul>
-    </div>
+  `;
+
+  if (hasBoundary) {
+    const boundaryLine = cleanValue(answers.boundary_level);
+    html += `
+      <div>
+        <h4 class="h5">גבולות השימוש</h4>
+        <p class="mb-0">${boundaryLine}</p>
+      </div>
+    `;
+  }
+
+  if (hasAllowed) {
+    const allowedStages = takeTopItems(answers.allowed_stages, 3);
+    html += `
+      <div>
+        <h4 class="h5">איפה אפשר להיעזר ב-AI?</h4>
+        <ul>${allowedStages.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </div>
+    `;
+  }
+
+  if (hasRecommended) {
+    const recommendedUses = takeTopItems(answers.recommended_ai.recommended_uses, 4);
+    html += `
+      <div>
+        <h4 class="h5">שימושים מומלצים</h4>
+        <ul>${recommendedUses.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </div>
+    `;
+  }
+
+  if (hasReporting) {
+    const reportingScope = takeTopItems(answers.reporting_scope, 4);
+    html += `
+      <div>
+        <h4 class="h5">מה צריך לדווח?</h4>
+        <ul>${reportingScope.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </div>
+    `;
+  }
+
+  if (hasConsequences) {
+    const consequences = takeTopItems(answers.boundary_consequences, 3);
+    html += `
+      <div>
+        <h4 class="h5">אם חורגים מהמדיניות</h4>
+        <ul>${consequences.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </div>
+    `;
+  }
+
+  html += `
     <div class="slide-footer">
       <p class="mb-0">הסטודנטים אחראים לבדוק אמינות, לשמור על פרטיות, ולדווח על כל שימוש רלוונטי ב-AI.</p>
     </div>
   `;
+
+  studentSlideEl.innerHTML = html;
 }
 
 function formatList(listValue) {
@@ -1137,10 +1227,17 @@ function formatList(listValue) {
   }
 
   if (Array.isArray(listValue)) {
-    return listValue.join(", ");
+    const cleaned = listValue.map(cleanValue);
+    if (cleaned.length > 3) {
+      return "\n" + cleaned.map(item => `  - ${item}`).join("\n");
+    } else if (cleaned.length >= 2) {
+      return cleaned.slice(0, -1).join(", ") + " ו" + cleaned[cleaned.length - 1];
+    } else {
+      return cleaned[0];
+    }
   }
 
-  return listValue;
+  return cleanValue(listValue);
 }
 
 function takeTopItems(listValue, limit) {
@@ -1149,10 +1246,10 @@ function takeTopItems(listValue, limit) {
   }
 
   if (Array.isArray(listValue) && listValue.length) {
-    return listValue.slice(0, limit);
+    return listValue.slice(0, limit).map(cleanValue);
   }
 
-  return [String(listValue)];
+  return [cleanValue(String(listValue))];
 }
 
 function initPolicyEditor() {
@@ -1218,9 +1315,24 @@ async function copyPolicyText() {
     } else {
       await navigator.clipboard.writeText(text);
     }
-    copyStatusEl.textContent = "הטקסט הועתק ללוח.";
+    showToast("הטקסט הועתק ללוח בהצלחה.");
   } catch (error) {
-    copyStatusEl.textContent = "לא הצלחנו להעתיק אוטומטית. אפשר לסמן ולהעתיק ידנית.";
+    showToast("לא הצלחנו להעתיק אוטומטית. אפשר לסמן ולהעתיק ידנית.");
+  }
+}
+
+function showToast(message) {
+  const toastEl = document.getElementById("copy-toast");
+  if (toastEl && window.bootstrap?.Toast) {
+    const bodyEl = toastEl.querySelector(".toast-body");
+    if (bodyEl) {
+      bodyEl.textContent = message;
+    }
+    let toastInstance = window.bootstrap.Toast.getInstance(toastEl);
+    if (!toastInstance) {
+      toastInstance = new window.bootstrap.Toast(toastEl, { delay: 3000 });
+    }
+    toastInstance.show();
   }
 }
 
@@ -1271,7 +1383,7 @@ function renderWizard() {
   formSectionsEl.innerHTML = `
     <div class="wizard-shell" aria-labelledby="wizard-title">
       <div class="wizard-topbar">
-        <p class="wizard-skip-note mb-0" id="wizard-title">אפשר לדלג על שאלות פחות רלוונטיות ולחזור אליהן בהמשך.</p>
+        <div id="wizard-section-header" class="form-section-header mb-0"></div>
         <p class="wizard-progress-text" id="wizard-progress-text" aria-live="polite"></p>
       </div>
       <div class="progress wizard-progress" role="progressbar" aria-labelledby="wizard-progress-text" aria-valuemin="0" aria-valuemax="100">
@@ -1306,15 +1418,17 @@ function showQuestion(index, options = {}) {
   state.conditionalInputs.clear();
   questionMount.innerHTML = "";
 
+  const sectionHeaderEl = document.getElementById("wizard-section-header");
+  if (sectionHeaderEl) {
+    sectionHeaderEl.innerHTML = `
+      <h3 id="${page.sectionId}-title" class="h4 mb-1">${page.sectionTitle}</h3>
+      <p class="mb-0 text-secondary-emphasis" style="font-size: 0.95rem;">${page.sectionIntro}</p>
+    `;
+  }
+
   const wrapper = document.createElement("div");
   wrapper.className = "form-section";
   wrapper.setAttribute("aria-labelledby", `${page.sectionId}-title`);
-  wrapper.innerHTML = `
-    <div class="form-section-header">
-      <h3 id="${page.sectionId}-title" class="h4">${page.sectionTitle}</h3>
-      <p class="mb-0">${page.sectionIntro}</p>
-    </div>
-  `;
 
   if (page.sectionCallout && page.calloutPlacement !== "afterQuestions") {
     wrapper.appendChild(createCalloutElement(page.sectionCallout, `${page.sectionId}-callout-shown`));
@@ -1594,7 +1708,9 @@ function skipCurrentQuestion() {
 
 function finishWizard(options = {}) {
   clearAllErrors();
-  copyStatusEl.textContent = "";
+  if (copyStatusEl) {
+    copyStatusEl.textContent = "";
+  }
 
   if (!options.allowCurrentSkip && !validateCurrentQuestion()) {
     return;
@@ -1689,6 +1805,20 @@ function init() {
   policyForm.addEventListener("submit", handleSubmit);
   copyPolicyButton.addEventListener("click", copyPolicyText);
   printPolicyButton.addEventListener("click", () => window.print());
+
+  window.addEventListener("beforeprint", () => {
+    const printContainer = document.getElementById("policy-print-container");
+    if (printContainer) {
+      printContainer.innerHTML = getPolicyHtml();
+    }
+  });
+
+  window.addEventListener("afterprint", () => {
+    const printContainer = document.getElementById("policy-print-container");
+    if (printContainer) {
+      printContainer.innerHTML = "";
+    }
+  });
 }
 
 init();

@@ -56,10 +56,6 @@
               <p class="hero-lead lead mb-4 text-white">כלים לניסוח מדיניות AI בקורס, בצורה ברורה, שקופה, פדגוגית ונגישה
                 לסטודנטים
                 ולסטודנטיות.</p>
-              <div class="d-flex flex-wrap gap-3">
-                <a class="btn btn-primary" href="#builder">להתחיל לבנות מדיניות</a>
-                <a class="btn btn-secondary" href="#guidelines">לעבור על הקווים המנחים</a>
-              </div>
             </div>
           </div>
           <div class="col-lg-5">
@@ -285,19 +281,37 @@
           <p class="mb-0">כאן תמצאו גם נוסח מלא להעתקה וגם גרסת שקף תמציתית להצגה לסטודנטים.</p>
         </div>
         <div class="row g-4 align-items-stretch">
-          <div class="col-xl-7">
+          <div class="col-xl-7" id="editor-col">
             <div class="surface-card h-100 p-4">
               <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
                 <div>
                   <h3 class="h4 mb-1">נוסח מלא למרצה</h3>
-                  <p class="mb-0 text-secondary-emphasis">אפשר להעתיק, לערוך, או להמשיך לדייק לפי אופי הקורס.</p>
+                  <p class="mb-0 text-secondary-emphasis">לפניכם נוסח המדיניות שיצרנו, תוכלו להמשיך לערוך ולדייק אותו
+                    כאן בממשק ולאחר מכן להעתיק אותו לסילבוס שלכם או להוריד כPDF</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                  <button type="button" id="copy-policy" class="btn btn-secondary">העתקת הטקסט</button>
-                  <button type="button" id="print-policy" class="btn btn-primary">הדפסה / PDF</button>
+                  <button type="button" id="copy-policy"
+                    class="btn btn-secondary d-inline-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                      class="bi bi-copy" viewBox="0 0 16 16" aria-hidden="true">
+                      <path fill-rule="evenodd"
+                        d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
+                    </svg>
+                    <span>העתקת הטקסט</span>
+                  </button>
+                  <button type="button" id="print-policy"
+                    class="btn btn-primary d-inline-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                      class="bi bi-download" viewBox="0 0 16 16" aria-hidden="true">
+                      <path
+                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                      <path
+                        d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                    </svg>
+                    <span>הדפסה / PDF</span>
+                  </button>
                 </div>
               </div>
-              <div id="copy-status" class="copy-status" aria-live="polite"></div>
               <div class="policy-editor-shell">
                 <div id="policy-toolbar" class="policy-toolbar" aria-label="סרגל עריכת מדיניות">
                   <span class="ql-formats">
@@ -323,7 +337,7 @@
           </div>
           <div id="print-area" class="col-xl-5">
             <div class="slide-preview h-100 d-flex flex-column gap-3 p-4" id="student-slide">
-              <span class="slide-pill">מדיניות AI בקורס</span>
+              <span class="slide-pill">תקציר המדניות בקורס</span>
             </div>
             <p class="print-only mt-3">הופק על ידי המרכז לקידום ההוראה ב-HIT</p>
           </div>
@@ -367,9 +381,8 @@
     <div class="container d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
       <p class="mb-0 footer-note">הופק על ידי המרכז לקידום ההוראה ב-HIT.</p>
       <div class="d-flex flex-wrap gap-3">
-        <a href="#" aria-label="אתר HIT">לאתר המכון</a>
-        <a href="#" aria-label="TeachHit">TeachHit</a>
-        <a href="#" aria-label="תבנית הצהרת שימוש AI">תבנית דיווח שימוש AI</a>
+        <a href="https://www.hit.ac.il/" aria-label="אתר HIT">לאתר המכון</a>
+        <a href="https://md.hit.ac.il/course/view.php?id=22997" aria-label="TeachHit">TeachHit</a>
       </div>
     </div>
   </footer>
@@ -404,6 +417,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast notification container -->
+  <div class="toast-container position-fixed bottom-0 start-0 p-3" style="z-index: 1100;">
+    <div id="copy-toast" class="toast align-items-center text-white custom-toast border-0" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          הטקסט הועתק ללוח בהצלחה.
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="סגירה"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="policy-print-container" class="d-none"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"></script>

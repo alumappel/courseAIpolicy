@@ -58,8 +58,8 @@ h5 {
   line-height: 1.15;
 }
 
-h1{
-   font-weight: 900 !important;
+h1 {
+  font-weight: 900 !important;
 }
 
 
@@ -193,9 +193,8 @@ body :where(header, main > section:not(#builder), footer, .modal) .btn-secondary
   color: var(--color-primary-dark);
 }
 
-main > section:not(#builder) {
+main>section:not(#builder) {
   position: relative;
-  box-shadow: var(--shadow-section);
 }
 
 .logo-img {
@@ -363,7 +362,7 @@ main > section:not(#builder) {
   margin-block-end: 1rem;
 }
 
-.question-block--mb-3 + .question-block {
+.question-block--mb-3+.question-block {
   margin-block-start: 0;
 }
 
@@ -788,35 +787,105 @@ footer a:hover {
   }
 }
 
+#reporting_format_link {
+  direction: ltr;
+  text-align: left;
+}
+
+#reporting_format_link:placeholder-shown {
+  direction: rtl;
+  text-align: right;
+}
+
 @media print {
-  body {
-    background: #fff !important;
+  body > * {
+    display: none !important;
   }
 
-  body * {
-    visibility: hidden;
-  }
-
-  #print-area,
-  #print-area * {
-    visibility: visible;
-  }
-
-  #print-area {
-    position: absolute;
-    inset: 0;
-    inline-size: 100%;
+  #policy-print-container {
+    display: block !important;
+    direction: rtl;
+    text-align: right;
+    font-family: var(--font-body);
+    font-size: 12pt;
+    line-height: 1.6;
     padding: 0;
     margin: 0;
   }
 
-  .slide-preview {
-    min-block-size: auto;
-    break-inside: avoid;
-    box-shadow: none;
+  #policy-print-container h2 {
+    font-size: 18pt;
+    color: var(--color-primary-dark);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
   }
 
-  .print-only {
-    display: block;
+  #policy-print-container h3 {
+    font-size: 14pt;
+    color: var(--color-primary-dark);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    page-break-after: avoid;
   }
+
+  #policy-print-container p {
+    font-size: 11pt;
+    margin-bottom: 0.75rem;
+  }
+
+  #policy-print-container ul {
+    margin-bottom: 0.75rem;
+    padding-inline-start: 2.2rem !important;
+    list-style-type: disc !important;
+  }
+
+  #policy-print-container li {
+    font-size: 11pt;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* Custom copy success toast notification */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  left: auto;
+  z-index: 2100;
+}
+
+.custom-toast {
+  background-color: var(--color-primary-dark) !important;
+  color: #fff !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-card-elevated) !important;
+}
+
+.custom-toast .btn-close {
+  filter: invert(1) grayscale(1) brightness(2); /* turns standard dark close button to white */
+}
+
+/* Fix for Quill editor list bullets in RTL */
+.policy-output .ql-editor ul,
+.policy-output .ql-editor ol {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-block-end: 1rem !important;
+  list-style-type: none !important;
+}
+
+.policy-output .ql-editor li {
+  padding-left: 0 !important;
+  padding-right: 1.5em !important;
+  list-style-type: none !important;
+}
+
+.policy-output .ql-editor li::before,
+.policy-output .ql-editor li > .ql-ui:before {
+  display: inline-block !important;
+  margin-right: -1.5em !important;
+  margin-left: 0.3em !important;
+  text-align: left !important;
+  direction: ltr !important;
 }
