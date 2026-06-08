@@ -675,7 +675,10 @@ main>section:not(#builder) {
 }
 
 .slide-preview {
-  background: linear-gradient(135deg, #f0f8f8 0%, #a4cbce 100%);
+  background: 
+    linear-gradient(90deg, rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
+    linear-gradient(rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
+    linear-gradient(135deg, #f0f8f8 0%, #a4cbce 100%);
   color: #1e293b;
   border-radius: var(--radius-lg);
   aspect-ratio: 16 / 9;
@@ -1018,7 +1021,10 @@ footer a:hover {
     height: 167mm !important;
     padding: 1.8cqw 2.2cqw !important;
     box-sizing: border-box !important;
-    background: linear-gradient(135deg, #f0f8f8 0%, #a4cbce 100%) !important;
+    background: 
+      linear-gradient(90deg, rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
+      linear-gradient(rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
+      linear-gradient(135deg, #f0f8f8 0%, #a4cbce 100%) !important;
     color: #1e293b !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
