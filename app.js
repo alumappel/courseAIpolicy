@@ -535,7 +535,10 @@ function renderChoiceQuestion(question) {
       conditionalInput.placeholder = optionData.conditionalInput.placeholder || "";
       conditionalInput.hidden = true;
       conditionalInput.setAttribute("aria-label", optionData.conditionalInput.ariaLabel || question.label);
-      conditionalInput.addEventListener("input", () => clearQuestionError(question.id));
+      conditionalInput.addEventListener("input", () => {
+        clearQuestionError(question.id);
+        saveCurrentQuestionAnswer();
+      });
       card.appendChild(conditionalInput);
 
       state.conditionalInputs.set(question.id, {
@@ -573,6 +576,10 @@ function renderChoiceQuestion(question) {
     }
     otherInput.hidden = true;
     otherInput.setAttribute("aria-label", `${question.label} - תשובה חופשית`);
+    otherInput.addEventListener("input", () => {
+      clearQuestionError(question.id);
+      saveCurrentQuestionAnswer();
+    });
     otherCard.appendChild(otherInput);
     grid.appendChild(otherCard);
 
@@ -585,6 +592,7 @@ function renderChoiceQuestion(question) {
       if (question.type === "radio" && toggle.checked) {
         otherInput.focus();
       }
+      saveCurrentQuestionAnswer();
     });
 
     inputs.push(toggle);
@@ -597,6 +605,7 @@ function renderChoiceQuestion(question) {
       }
       syncConditionalField(question.id);
       clearQuestionError(question.id);
+      saveCurrentQuestionAnswer();
     });
   });
 
@@ -635,7 +644,10 @@ function renderDualCheckboxQuestion(question) {
       `;
       const input = card.querySelector("input");
       makeChoiceCardInteractive(card, input);
-      input.addEventListener("change", () => clearQuestionError(question.id));
+      input.addEventListener("change", () => {
+        clearQuestionError(question.id);
+        saveCurrentQuestionAnswer();
+      });
       grid.appendChild(card);
     });
 
@@ -656,6 +668,10 @@ function renderDualCheckboxQuestion(question) {
       otherInput.placeholder = "הוסיפו תשובה חופשית";
       otherInput.hidden = true;
       otherInput.setAttribute("aria-label", `${group.title} - תשובה חופשית`);
+      otherInput.addEventListener("input", () => {
+        clearQuestionError(question.id);
+        saveCurrentQuestionAnswer();
+      });
       otherCard.appendChild(otherInput);
       grid.appendChild(otherCard);
 
@@ -665,6 +681,7 @@ function renderDualCheckboxQuestion(question) {
       toggle.addEventListener("change", () => {
         syncOtherField(group.id);
         clearQuestionError(question.id);
+        saveCurrentQuestionAnswer();
       });
     }
 
@@ -682,7 +699,10 @@ function renderTextarea(question) {
   textarea.name = question.id;
   textarea.rows = 5;
   textarea.placeholder = question.placeholder || "";
-  textarea.addEventListener("input", () => clearQuestionError(question.id));
+  textarea.addEventListener("input", () => {
+    clearQuestionError(question.id);
+    saveCurrentQuestionAnswer();
+  });
   return textarea;
 }
 
@@ -693,7 +713,10 @@ function renderTextInput(question) {
   input.id = question.id;
   input.name = question.id;
   input.placeholder = question.placeholder || "";
-  input.addEventListener("input", () => clearQuestionError(question.id));
+  input.addEventListener("input", () => {
+    clearQuestionError(question.id);
+    saveCurrentQuestionAnswer();
+  });
   return input;
 }
 
@@ -1254,6 +1277,48 @@ function takeTopItems(listValue, limit) {
   return [cleanValue(String(listValue))];
 }
 
+function saveStateToLocalStorage() {
+  try {
+    localStorage.setItem("hit_policy_answers", JSON.stringify(state.answers));
+    localStorage.setItem("hit_policy_current_index", String(state.currentQuestionIndex));
+    localStorage.setItem("hit_policy_skipped", JSON.stringify([...state.skippedQuestions]));
+  } catch (error) {
+    console.warn("Unable to save state to localStorage:", error);
+  }
+}
+
+function loadStateFromLocalStorage() {
+  try {
+    const answers = localStorage.getItem("hit_policy_answers");
+    const currentIndex = localStorage.getItem("hit_policy_current_index");
+    const skipped = localStorage.getItem("hit_policy_skipped");
+
+    if (answers) {
+      state.answers = JSON.parse(answers);
+    }
+    if (currentIndex !== null) {
+      state.currentQuestionIndex = parseInt(currentIndex, 10) || 0;
+    }
+    if (skipped) {
+      state.skippedQuestions = new Set(JSON.parse(skipped));
+    }
+  } catch (error) {
+    console.warn("Unable to load state from localStorage:", error);
+  }
+}
+
+function clearStateFromLocalStorage() {
+  try {
+    localStorage.removeItem("hit_policy_answers");
+    localStorage.removeItem("hit_policy_current_index");
+    localStorage.removeItem("hit_policy_skipped");
+    localStorage.removeItem("hit_policy_edited_html");
+    localStorage.removeItem("hit_policy_completed");
+  } catch (error) {
+    console.warn("Unable to clear state from localStorage:", error);
+  }
+}
+
 function initPolicyEditor() {
   if (policyEditor || !window.Quill || !policyOutputEl) {
     return;
@@ -1264,6 +1329,14 @@ function initPolicyEditor() {
     placeholder: "כאן תוכלו לערוך את המדיניות שנוצרה, להדגיש, להוסיף קישורים ולעצב את הטקסט.",
     modules: {
       toolbar: "#policy-toolbar"
+    }
+  });
+
+  policyEditor.on("text-change", () => {
+    try {
+      localStorage.setItem("hit_policy_edited_html", getPolicyHtml());
+    } catch (error) {
+      console.warn("Unable to save edited html to localStorage:", error);
     }
   });
 }
@@ -1459,6 +1532,11 @@ function renderWizard() {
 
 function showQuestion(index, options = {}) {
   state.currentQuestionIndex = Math.min(Math.max(index, 0), state.wizardQuestions.length - 1);
+  
+  try {
+    localStorage.setItem("hit_policy_current_index", String(state.currentQuestionIndex));
+  } catch (e) {}
+
   const page = state.wizardQuestions[state.currentQuestionIndex];
   const questionMount = document.getElementById("wizard-question");
 
@@ -1489,7 +1567,6 @@ function showQuestion(index, options = {}) {
       questionEl.classList.add("question-block--mb-3");
     }
     wrapper.appendChild(questionEl);
-    restoreQuestionAnswer(question, state.answers[question.id]);
   });
 
   if (page.sectionCallout && page.calloutPlacement === "afterQuestions") {
@@ -1497,6 +1574,12 @@ function showQuestion(index, options = {}) {
   }
 
   questionMount.appendChild(wrapper);
+
+  // Restore answers now that elements are mounted in the DOM
+  page.questions.forEach((question) => {
+    restoreQuestionAnswer(question, state.answers[question.id]);
+  });
+
   updateWizardProgress();
   clearAllErrors();
 
@@ -1552,6 +1635,8 @@ function saveCurrentQuestionAnswer() {
   if (page.questions.every((question) => !question.required || isQuestionAnswered(question, state.answers[question.id]))) {
     state.skippedQuestions.delete(page.pageId);
   }
+
+  saveStateToLocalStorage();
 }
 
 function collectQuestionAnswer(question) {
@@ -1725,6 +1810,7 @@ function validateCurrentQuestion({ allowSkip = false } = {}) {
   });
 
   if (!firstError) {
+    saveStateToLocalStorage();
     return true;
   }
 
@@ -1763,6 +1849,8 @@ function skipCurrentQuestion() {
   });
   state.skippedQuestions.add(page.pageId);
 
+  saveStateToLocalStorage();
+
   if (state.currentQuestionIndex === state.wizardQuestions.length - 1) {
     finishWizard({ allowCurrentSkip: true });
     return;
@@ -1772,6 +1860,8 @@ function skipCurrentQuestion() {
 }
 
 function resetWizard() {
+  clearStateFromLocalStorage();
+
   state.answers = {};
   state.skippedQuestions.clear();
   state.currentQuestionIndex = 0;
@@ -1813,6 +1903,11 @@ function finishWizard(options = {}) {
   }
   setPolicyEditorContent(policyHtml);
   builderStatusEl.textContent = "המדיניות הופקה בהצלחה.";
+
+  try {
+    localStorage.setItem("hit_policy_completed", "true");
+    localStorage.setItem("hit_policy_edited_html", policyHtml);
+  } catch (e) {}
 
   if (reflectionModal) {
     reflectionModal.show();
@@ -1881,6 +1976,9 @@ function setupNavHighlight() {
 
 function init() {
   state.wizardQuestions = flattenQuestions(formConfig);
+  
+  loadStateFromLocalStorage();
+  
   renderWizard();
   setupSummaryLinks();
   setupGuidelineObserver();
@@ -1889,6 +1987,21 @@ function init() {
   if (reflectionModalEl && window.bootstrap?.Modal) {
     reflectionModal = new window.bootstrap.Modal(reflectionModalEl);
   }
+
+  try {
+    const completed = localStorage.getItem("hit_policy_completed") === "true";
+    if (completed) {
+      const savedHtml = localStorage.getItem("hit_policy_edited_html");
+      if (savedHtml) {
+        resultsSection.hidden = false;
+        buildStudentSlide(state.answers);
+        if (!policyEditor) {
+          initPolicyEditor();
+        }
+        setPolicyEditorContent(savedHtml);
+      }
+    }
+  } catch (e) {}
 
   if (resetConfirmModalEl && window.bootstrap?.Modal) {
     resetConfirmModal = new window.bootstrap.Modal(resetConfirmModalEl);
