@@ -347,10 +347,12 @@ const studentSlideEl = document.getElementById("student-slide");
 const copyStatusEl = document.getElementById("copy-status");
 const builderStatusEl = document.getElementById("builder-status");
 const reflectionModalEl = document.getElementById("reflectionModal");
+const resetConfirmModalEl = document.getElementById("resetConfirmModal");
 const copyPolicyButton = document.getElementById("copy-policy");
 const printPolicyButton = document.getElementById("print-policy");
 
 let reflectionModal;
+let resetConfirmModal;
 let policyEditor;
 
 function renderForm(config) {
@@ -1297,12 +1299,48 @@ function scrollToResults() {
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function cleanHtmlForClipboard(html) {
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = html;
+
+  // Convert ol lists that represent bullet lists to ul
+  const ols = tempDiv.querySelectorAll("ol");
+  ols.forEach((ol) => {
+    const firstLi = ol.querySelector("li");
+    if (firstLi && firstLi.getAttribute("data-list") === "bullet") {
+      const ul = document.createElement("ul");
+      if (ol.hasAttributes()) {
+        for (const attr of ol.attributes) {
+          ul.setAttribute(attr.name, attr.value);
+        }
+      }
+      while (ol.firstChild) {
+        ul.appendChild(ol.firstChild);
+      }
+      ol.parentNode.replaceChild(ul, ol);
+    }
+  });
+
+  // Clean data-list and ql-ui elements in all lists (bullets and ordered)
+  tempDiv.querySelectorAll("li").forEach((li) => {
+    li.removeAttribute("data-list");
+    const qlUi = li.querySelector(".ql-ui");
+    if (qlUi) {
+      qlUi.remove();
+    }
+  });
+
+  return tempDiv.innerHTML;
+}
+
 async function copyPolicyText() {
   const text = getPolicyPlainText();
-  const html = getPolicyHtml();
+  const rawHtml = getPolicyHtml();
   if (!text) {
     return;
   }
+
+  const html = cleanHtmlForClipboard(rawHtml);
 
   try {
     if (navigator.clipboard?.write && window.ClipboardItem) {
@@ -1403,7 +1441,18 @@ function renderWizard() {
   `;
 
   document.getElementById("wizard-prev").addEventListener("click", goToPreviousQuestion);
-  document.getElementById("wizard-skip").addEventListener("click", skipCurrentQuestion);
+  document.getElementById("wizard-skip").addEventListener("click", () => {
+    const total = state.wizardQuestions.length;
+    if (state.currentQuestionIndex === total - 1) {
+      if (resetConfirmModal) {
+        resetConfirmModal.show();
+      } else if (confirm("להתחיל מחדש? כל המידע שמילאת יימחק.")) {
+        resetWizard();
+      }
+    } else {
+      skipCurrentQuestion();
+    }
+  });
 
   showQuestion(state.currentQuestionIndex);
 }
@@ -1465,12 +1514,28 @@ function updateWizardProgress() {
   const progress = progressBar?.closest(".progress");
   const prevButton = document.getElementById("wizard-prev");
   const nextButton = document.getElementById("wizard-next");
+  const skipButton = document.getElementById("wizard-skip");
 
   progressText.textContent = `שאלה ${current} מתוך ${total}`;
   progressBar.style.width = `${percent}%`;
   progress?.setAttribute("aria-valuenow", String(percent));
   prevButton.disabled = state.currentQuestionIndex === 0;
   nextButton.textContent = state.currentQuestionIndex === total - 1 ? "להפקת מדיניות" : "הבא";
+
+  if (skipButton) {
+    if (state.currentQuestionIndex === total - 1) {
+      skipButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: middle; margin-inline-end: 0.35rem;">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
+        </svg><span>התחלה מחדש</span>
+      `;
+      skipButton.className = "btn btn-outline-secondary";
+    } else {
+      skipButton.innerHTML = "דלג על השאלה";
+      skipButton.className = "btn btn-outline-primary";
+    }
+  }
 }
 
 function saveCurrentQuestionAnswer() {
@@ -1706,6 +1771,29 @@ function skipCurrentQuestion() {
   showQuestion(state.currentQuestionIndex + 1, { focusQuestion: true });
 }
 
+function resetWizard() {
+  state.answers = {};
+  state.skippedQuestions.clear();
+  state.currentQuestionIndex = 0;
+
+  if (resultsSection) {
+    resultsSection.hidden = true;
+  }
+
+  if (policyEditor) {
+    policyEditor.setContents([]);
+  } else if (policyOutputEl) {
+    policyOutputEl.innerHTML = "";
+  }
+
+  showQuestion(0, { focusQuestion: true });
+
+  const builderSection = document.getElementById("builder");
+  if (builderSection) {
+    builderSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 function finishWizard(options = {}) {
   clearAllErrors();
   if (copyStatusEl) {
@@ -1800,6 +1888,20 @@ function init() {
 
   if (reflectionModalEl && window.bootstrap?.Modal) {
     reflectionModal = new window.bootstrap.Modal(reflectionModalEl);
+  }
+
+  if (resetConfirmModalEl && window.bootstrap?.Modal) {
+    resetConfirmModal = new window.bootstrap.Modal(resetConfirmModalEl);
+  }
+
+  const confirmResetBtn = document.getElementById("confirm-reset-btn");
+  if (confirmResetBtn) {
+    confirmResetBtn.addEventListener("click", () => {
+      if (resetConfirmModal) {
+        resetConfirmModal.hide();
+      }
+      resetWizard();
+    });
   }
 
   policyForm.addEventListener("submit", handleSubmit);
