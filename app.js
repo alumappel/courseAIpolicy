@@ -1158,18 +1158,58 @@ function buildPolicyHtml(answers) {
   return sections.join("\n").replace(/::+/g, ":").replace(/\.\.+/g, ".");
 }
 
+function formatSlideList(listValue) {
+  if (!listValue || (Array.isArray(listValue) && listValue.length === 0)) {
+    return "";
+  }
+
+  if (Array.isArray(listValue)) {
+    const cleaned = listValue.map(cleanValue);
+    if (cleaned.length >= 4) {
+      return `<ul>${cleaned.map(item => `<li>${item}</li>`).join("")}</ul>`;
+    } else if (cleaned.length === 3) {
+      return `${cleaned[0]}, ${cleaned[1]} ו${cleaned[2]}`;
+    } else if (cleaned.length === 2) {
+      return `${cleaned[0]} ו${cleaned[1]}`;
+    } else {
+      return cleaned[0];
+    }
+  }
+
+  return cleanValue(String(listValue));
+}
+
+function renderSlideBullet(label, value) {
+  if (!value) return "";
+  if (value.startsWith("<ul>")) {
+    return `<li>${label}:</li>${value}`;
+  }
+  return `<li>${label}: ${value}</li>`;
+}
+
 function buildStudentSlide(answers, forceRegenerate = false) {
   const slideWrapper = document.getElementById("slide-wrapper");
   const slideEmptyState = document.getElementById("slide-empty-state");
 
   // 1. Check if we have manually edited slide html in localStorage and are NOT forcing regeneration
+  // Also force regeneration if cached html contains deprecated slide-pill or slide-edit-badge elements
   try {
     const savedSlideHtml = localStorage.getItem("hit_policy_edited_slide_html");
-    if (savedSlideHtml && !forceRegenerate) {
+    if (savedSlideHtml && !forceRegenerate && !savedSlideHtml.includes("slide-pill") && !savedSlideHtml.includes("slide-edit-badge") && !savedSlideHtml.includes("אחריות אישית:") && !savedSlideHtml.includes("נדרש לבדוק לפי")) {
       if (slideWrapper) slideWrapper.classList.remove("d-none");
       if (slideEmptyState) slideEmptyState.classList.add("d-none");
 
-      studentSlideEl.innerHTML = savedSlideHtml;
+      let cleanedHtml = savedSlideHtml;
+      // Clean up outdated margin classes that interfere with relative sizes
+      cleanedHtml = cleanedHtml.replace('class="display-6 mb-2"', 'class="display-6"');
+      cleanedHtml = cleanedHtml.replace('class="mb-4 text-white-50"', 'class="text-white-50 fw-bold"');
+      if (!cleanedHtml.includes('class="text-white-50 fw-bold"')) {
+        cleanedHtml = cleanedHtml.replace('class="text-white-50"', 'class="text-white-50 fw-bold"');
+      }
+      // Remove the pipe before HIT and ensure bold footer text
+      cleanedHtml = cleanedHtml.replace(' | HIT', ' HIT');
+      cleanedHtml = cleanedHtml.replace('class="mb-0 text-white-50 text-center"', 'class="mb-0 text-white-50 text-center fw-bold"');
+      studentSlideEl.innerHTML = cleanedHtml;
 
       setupSlideEditListeners();
       return;
@@ -1178,40 +1218,64 @@ function buildStudentSlide(answers, forceRegenerate = false) {
     console.warn("Error loading saved slide html from localStorage:", e);
   }
 
-  // 2. Gather values and check which of the 6 sections have meaningful content
-  const goals = formatList(answers.course_goals);
-  const aiSkills = formatList(answers.ai_skills);
-  const risks = formatList(answers.skills_at_risk);
-  const allowedStages = formatList(answers.allowed_stages);
+  // 2. Gather values and check which of the sections have meaningful content
+  const risks = formatSlideList(answers.skills_at_risk);
+  const allowedStages = formatSlideList(answers.allowed_stages);
   const boundaryLevel = cleanValue(answers.boundary_level);
-  const recommendedUses = formatList(answers.recommended_ai?.recommended_uses);
-  const recommendedTools = formatList(answers.recommended_ai?.recommended_tools);
-  const studentResponsibility = cleanValue(answers.student_responsibility);
+  const recommendedUses = formatSlideList(answers.recommended_ai?.recommended_uses);
+  const recommendedTools = formatSlideList(answers.recommended_ai?.recommended_tools);
+  
+  let studentResponsibility = cleanValue(answers.student_responsibility);
+  if (studentResponsibility.includes("על הסטודנט או הסטודנטית חלה האחריות המלאה")) {
+    studentResponsibility = "האחריות המלאה על מהימנות, אתיקה וזכויות יוצרים בתוצרי הקורס היא על הסטודנט/ית.";
+  }
+  
   const verificationLevel = cleanValue(answers.verification_level);
-  const privacyWarnings = formatList(answers.privacy_warnings);
-  const reportingScope = formatList(answers.reporting_scope);
-  const reportingFormat = answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link
-    ? `קישור לתבנית הדיווח: ${answers.reporting_format_link}`
-    : (answers.reporting_format === "תבנית הצהרת שימוש ב-AI במטלות" ? "באמצעות תבנית הצהרת שימוש ב-AI במטלות." : "");
-  const reportingTiming = formatList(answers.reporting_timing);
-  const citationText = answers.citation_guidance ? cleanValue(answers.citation_guidance) : "";
-  const masteryChecks = formatList(answers.mastery_checks);
-  const boundaryConsequences = formatList(answers.boundary_consequences);
-  const reportingConsequences = formatList(answers.reporting_consequences);
-  const equityPaidTools = answers.equity_paid_tools ? cleanValue(answers.equity_paid_tools) : "";
+  const privacyWarnings = formatSlideList(answers.privacy_warnings);
+  
+  const reportingScope = formatSlideList(answers.reporting_scope);
+  let reportingFormat = "";
+  if (answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link) {
+    const cleanUrl = sanitizeUrl(answers.reporting_format_link) || escapeHtml(answers.reporting_format_link);
+    reportingFormat = `באמצעות <a href="${cleanUrl}" target="_blank" rel="noopener">קישור לתבנית הדיווח</a>`;
+  } else if (answers.reporting_format === "תבנית הצהרת שימוש ב-AI במטלות") {
+    reportingFormat = `באמצעות <a href="assets/files/הצהרה על שימוש בכלי בינה מלאכותית במטלות.docx" target="_blank" rel="noopener">תבנית הצהרת שימוש ב-AI במטלות</a>`;
+  }
+  const reportingTiming = formatSlideList(answers.reporting_timing);
+
+  // Combine consequences (questions 14, 15, 16)
+  const combinedConsequencesList = [];
+  if (Array.isArray(answers.boundary_consequences)) {
+    combinedConsequencesList.push(...answers.boundary_consequences);
+  }
+  if (Array.isArray(answers.reporting_consequences)) {
+    combinedConsequencesList.push(...answers.reporting_consequences);
+  }
+  const uniqueConsequences = [...new Set(combinedConsequencesList)];
+  const formattedConsequences = formatSlideList(uniqueConsequences);
+  const formattedMastery = formatSlideList(answers.mastery_checks);
+
   const equitySupport = answers.equity_support ? cleanValue(answers.equity_support) : "";
 
-  const hasRationale = hasMeaningfulAnswer(answers.course_goals) || hasMeaningfulAnswer(answers.ai_skills) || hasMeaningfulAnswer(answers.skills_at_risk);
+  // Check section visibility based on slide requirements (Questions 1, 2, 13, 17 are omitted)
+  const hasRationale = hasMeaningfulAnswer(answers.skills_at_risk);
   const hasBoundaries = hasMeaningfulAnswer(answers.boundary_level) || hasMeaningfulAnswer(answers.allowed_stages) || hasMeaningfulAnswer(answers.recommended_ai?.recommended_uses) || hasMeaningfulAnswer(answers.recommended_ai?.recommended_tools);
   const hasResponsibility = hasMeaningfulAnswer(answers.student_responsibility) || hasMeaningfulAnswer(answers.verification_level) || hasMeaningfulAnswer(answers.privacy_warnings);
-  const hasTransparency = hasMeaningfulAnswer(answers.reporting_scope) || hasMeaningfulAnswer(answers.reporting_timing) || hasMeaningfulAnswer(answers.citation_guidance) || hasMeaningfulAnswer(answers.mastery_checks);
-  const hasEnforcement = hasMeaningfulAnswer(answers.boundary_consequences) || hasMeaningfulAnswer(answers.reporting_consequences);
-  const hasEquity = hasMeaningfulAnswer(answers.equity_paid_tools) || hasMeaningfulAnswer(answers.equity_support);
+  const hasTransparency = hasMeaningfulAnswer(answers.reporting_scope) || hasMeaningfulAnswer(answers.reporting_timing) || hasMeaningfulAnswer(answers.reporting_format);
+  const hasEnforcement = hasMeaningfulAnswer(answers.boundary_consequences) || hasMeaningfulAnswer(answers.reporting_consequences) || hasMeaningfulAnswer(answers.mastery_checks);
+  const hasEquity = hasMeaningfulAnswer(answers.equity_support);
 
-  const totalFilledSections = [hasRationale, hasBoundaries, hasResponsibility, hasTransparency, hasEnforcement, hasEquity].filter(Boolean).length;
+  // Calculate active cards
+  let activeCardsCount = 0;
+  if (hasRationale) activeCardsCount++;
+  if (hasBoundaries) activeCardsCount++;
+  if (hasResponsibility) activeCardsCount++;
+  if (hasTransparency) activeCardsCount++;
+  if (hasEnforcement) activeCardsCount++;
+  if (hasEquity) activeCardsCount++;
 
-  // 3. Handle Empty State (< 2 sections filled)
-  if (totalFilledSections < 2) {
+  // 3. Handle Empty State (< 2 cards filled)
+  if (activeCardsCount < 2) {
     if (slideWrapper) slideWrapper.classList.add("d-none");
     if (slideEmptyState) slideEmptyState.classList.remove("d-none");
     return;
@@ -1223,28 +1287,26 @@ function buildStudentSlide(answers, forceRegenerate = false) {
   // 4. Build slide HTML
   let cardsHtml = "";
 
-  // Section 1: הרציונל
+  // Card 1: הרציונאל (שמירה מפני פגיעה בלבד)
   if (hasRationale) {
     let bullets = "";
-    if (hasMeaningfulAnswer(answers.course_goals)) bullets += `<li>מיומנויות לקידום: ${goals}</li>`;
-    if (hasMeaningfulAnswer(answers.ai_skills)) bullets += `<li>מיומנויות AI שנרכוש: ${aiSkills}</li>`;
-    if (hasMeaningfulAnswer(answers.skills_at_risk)) bullets += `<li>שמירה מפני פגיעה ב: ${risks}</li>`;
+    if (risks) bullets += renderSlideBullet("שמירה מפני פגיעה ב", risks);
 
     cardsHtml += `
       <div class="slide-card">
-        <h4>הרציונל לקורס</h4>
+        <h4>הרציונאל</h4>
         <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  // Section 2: גבולות הגזרה
+  // Card 2: גבולות הגזרה
   if (hasBoundaries) {
     let bullets = "";
-    if (boundaryLevel) bullets += `<li>קו מנחה: ${boundaryLevel}</li>`;
-    if (hasMeaningfulAnswer(answers.allowed_stages)) bullets += `<li>מותר להיעזר בשלבים: ${allowedStages}</li>`;
-    if (hasMeaningfulAnswer(answers.recommended_ai?.recommended_uses)) bullets += `<li>שימושים מומלצים: ${recommendedUses}</li>`;
-    if (hasMeaningfulAnswer(answers.recommended_ai?.recommended_tools)) bullets += `<li>כלים מומלצים: ${recommendedTools}</li>`;
+    if (boundaryLevel) bullets += `<li>${boundaryLevel}</li>`;
+    if (allowedStages) bullets += renderSlideBullet("מתי אפשר להשתמש בAI", allowedStages);
+    if (recommendedUses) bullets += renderSlideBullet("שימושים מומלצים", recommendedUses);
+    if (recommendedTools) bullets += renderSlideBullet("כלים מומלצים", recommendedTools);
 
     cardsHtml += `
       <div class="slide-card">
@@ -1254,29 +1316,27 @@ function buildStudentSlide(answers, forceRegenerate = false) {
     `;
   }
 
-  // Section 3: אחריות הסטודנט
+  // Card 3: אחריות הסטודנט/ית
   if (hasResponsibility) {
     let bullets = "";
-    if (studentResponsibility) bullets += `<li>אחריות אישית: ${studentResponsibility}</li>`;
-    if (verificationLevel) bullets += `<li>אימות מידע: נדרש לבדוק לפי ${verificationLevel}</li>`;
-    if (hasMeaningfulAnswer(answers.privacy_warnings)) bullets += `<li>פרטיות ואבטחה: ${privacyWarnings}</li>`;
+    if (studentResponsibility) bullets += `<li>${studentResponsibility}</li>`;
+    if (verificationLevel) bullets += `<li>אימות מידע: נדרש לבצע ${verificationLevel}</li>`;
+    if (privacyWarnings) bullets += renderSlideBullet("פרטיות ואבטחה", privacyWarnings);
 
     cardsHtml += `
       <div class="slide-card">
-        <h4>אחריות הסטודנט</h4>
+        <h4>אחריות הסטודנט/ית</h4>
         <ul>${bullets}</ul>
       </div>
     `;
   }
 
-  // Section 4: שקיפות וחובת דיווח
+  // Card 4: שקיפות וחובת דיווח
   if (hasTransparency) {
     let bullets = "";
-    if (hasMeaningfulAnswer(answers.reporting_scope)) bullets += `<li>פרטים לדיווח: ${reportingScope}</li>`;
+    if (reportingScope) bullets += renderSlideBullet("פרטים לדיווח", reportingScope);
     if (reportingFormat) bullets += `<li>אופן הדיווח: ${reportingFormat}</li>`;
-    if (hasMeaningfulAnswer(answers.reporting_timing)) bullets += `<li>מתי מדווחים: ${reportingTiming}</li>`;
-    if (citationText) bullets += `<li>הנחיות ציטוט: ${citationText}</li>`;
-    if (hasMeaningfulAnswer(answers.mastery_checks)) bullets += `<li>בדיקת בקיאות: ${masteryChecks}</li>`;
+    if (reportingTiming) bullets += renderSlideBullet("מתי מדווחים", reportingTiming);
 
     cardsHtml += `
       <div class="slide-card">
@@ -1286,11 +1346,11 @@ function buildStudentSlide(answers, forceRegenerate = false) {
     `;
   }
 
-  // Section 5: אכיפה והשלכות
+  // Card 5: אכיפה והשלכות (unifying questions 14, 15, 16)
   if (hasEnforcement) {
     let bullets = "";
-    if (hasMeaningfulAnswer(answers.boundary_consequences)) bullets += `<li>שימוש מחוץ לגבולות: ${boundaryConsequences}</li>`;
-    if (hasMeaningfulAnswer(answers.reporting_consequences)) bullets += `<li>אי-דיווח על שימוש: ${reportingConsequences}</li>`;
+    if (formattedMastery) bullets += renderSlideBullet("בדיקת בקיאות", formattedMastery);
+    if (formattedConsequences) bullets += renderSlideBullet("השלכות לשימוש חורג או אי-דיווח", formattedConsequences);
 
     cardsHtml += `
       <div class="slide-card">
@@ -1300,11 +1360,10 @@ function buildStudentSlide(answers, forceRegenerate = false) {
     `;
   }
 
-  // Section 6: שוויון ונגישות
+  // Card 6: שוויון ונגישות
   if (hasEquity) {
     let bullets = "";
-    if (equityPaidTools) bullets += `<li>גישה וכלים בתשלום: ${equityPaidTools}</li>`;
-    if (equitySupport) bullets += `<li>פערי אוריינות: ${equitySupport}</li>`;
+    if (equitySupport) bullets += renderSlideBullet("פערי אוריינות", equitySupport);
 
     cardsHtml += `
       <div class="slide-card">
@@ -1314,20 +1373,19 @@ function buildStudentSlide(answers, forceRegenerate = false) {
     `;
   }
 
+  // Select dynamic columns layout: 2 columns for 2 or 4 cards; 3 columns otherwise
+  const gridClass = (activeCardsCount === 2 || activeCardsCount === 4) ? "slide-grid--2" : "slide-grid--3";
+
   const generatedHtml = `
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <span class="slide-pill">מדיניות AI בקורס</span>
-      <span class="slide-edit-badge">✍️ השקף עריך - לחצו לעריכה</span>
-    </div>
     <div id="slide-editable-content" contenteditable="true" spellcheck="false" class="editable-slide-content">
-      <h3 class="display-6 mb-2">מדיניות AI בקורס</h3>
-      <p class="mb-4 text-white-50">הנחיות וכללי שימוש בכלים חכמים לסטודנטים ולסטודנטיות בקורס.</p>
-      <div class="slide-grid">
+      <h3 class="display-6">מדיניות AI בקורס</h3>
+      <p class="text-white-50 fw-bold">הנחיות וכללי שימוש בכלי AI במסגרת הקורס.</p>
+      <div class="slide-grid ${gridClass}">
         ${cardsHtml}
       </div>
     </div>
     <div class="slide-footer mt-auto">
-      <p class="mb-0 text-white-50 text-center">נבנה באמצעות כלי עזר למדיניות שימוש ב-AI בקורס | HIT המרכז לקידום ההוראה</p>
+      <p class="mb-0 text-white-50 text-center fw-bold">נבנה באמצעות כלי עזר למדיניות שימוש ב-AI בקורס | המרכז לקידום ההוראה HIT</p>
     </div>
   `;
 
@@ -2148,6 +2206,21 @@ function init() {
     if (printContainer) {
       if (printTarget === "slide") {
         document.body.classList.add("printing-slide");
+        
+        // Append dynamic landscape page orientation style
+        let styleEl = document.getElementById("dynamic-print-style");
+        if (!styleEl) {
+          styleEl = document.createElement("style");
+          styleEl.id = "dynamic-print-style";
+          styleEl.innerHTML = `
+            @page {
+              size: 297mm 167mm;
+              margin: 0;
+            }
+          `;
+          document.head.appendChild(styleEl);
+        }
+
         const slideContent = document.getElementById("student-slide");
         if (slideContent) {
           printContainer.innerHTML = slideContent.innerHTML;
@@ -2160,6 +2233,13 @@ function init() {
 
   window.addEventListener("afterprint", () => {
     document.body.classList.remove("printing-slide");
+    
+    // Remove dynamic landscape page orientation style
+    const styleEl = document.getElementById("dynamic-print-style");
+    if (styleEl) {
+      styleEl.remove();
+    }
+
     const printContainer = document.getElementById("policy-print-container");
     if (printContainer) {
       printContainer.innerHTML = "";
