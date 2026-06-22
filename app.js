@@ -7,7 +7,7 @@ const formConfig = [
     questions: [
       {
         id: "course_goals",
-        label: "מה המיומנויות והידע המרכזיים שאיתם הסטודנטים צריכים לצאת מהקורס?",
+        label: "מה הידע ומיומנויות הליבה שהקורס נועד להקנות?",
         type: "checkbox",
         required: true,
         options: [
@@ -76,14 +76,14 @@ const formConfig = [
         label: "באילו שלבים בקורס מותר ואף מומלץ להיעזר בבינה מלאכותית?",
         type: "checkbox",
         required: true,
-        options: ["במהלך השיעורים והתרגולים בקורס", "מטלת האמצע", "מטלה מסכמת", "למידה עצמית בין המפגשים"],
+        options: ["במהלך השיעורים והתרגולים בקורס", "מטלות האמצע", "מטלה מסכמת", "למידה עצמית בין השיעורים"],
         allowOther: true,
         otherLabel: "אחר"
       },
       {
         id: "boundary_level",
         label: "מהם הקווים האדומים בקורס?",
-        helpText: "בחרו את הרמה המתאימה או נסחו מדיניות מותאמת אישית.",
+        helpText: "בחרו את הרמה המתאימה או נסחו הגדרה מותאמת אישית.",
         type: "radio",
         required: true,
         options: [
@@ -97,7 +97,7 @@ const formConfig = [
       },
       {
         id: "recommended_ai",
-        label: "אילו כלים או שימושים מומלצים ללמידה בקורס?",
+        label: "אילו כלים ו/או שימושים מומלצים ללמידה בקורס?",
         helpText: "מומלץ לבחור 2–3 דוגמאות לפחות. אפשר לבחור מכל צד כמה פריטים שרוצים.",
         type: "dual-checkbox",
         required: true,
@@ -198,11 +198,11 @@ const formConfig = [
     sectionId: "transparency",
     sectionTitle: "4. שקיפות וחובת דיווח",
     intro:
-      "שקיפות בשימוש ב-AI מחזקת חשיבה ביקורתית ואחריות אישית. לכן חשוב לתאם ציפיות מראש לגבי אופן הדיווח לאורך תהליך העבודה.",
+      "שקיפות בשימוש ב-AI מחזקת חשיבה ביקורתית ואחריות אישית. אי לכך חשוב לתאם ציפיות מראש לגבי אופן הדיווח לאורך תהליך העבודה.",
     questions: [
       {
         id: "reporting_scope",
-        label: "מה היקף או רזולוציית הדיווח הרצויה מבחינתכם?",
+        label: "מה היקף או עומק הדיווח הרצויים מבחינתכם במסגרת כתיבת מטלות?",
         type: "checkbox",
         required: true,
         options: [
@@ -254,7 +254,7 @@ const formConfig = [
         label: "כיצד על הסטודנטים להפנות ולצטט תוכן שנוצר על ידי AI?",
         type: "textarea",
         required: false,
-        placeholder: "אפשר לציין כאן הנחיות ציטוט מקובלות בקורס, או הנחיה לדווח על שם הכלי, תאריך ואופי השימוש."
+        placeholder: "אפשר לציין כאן הנחיות הציטוט הביבליוגרפי המקובלות בקורס, או הנחיה לדווח על שם הכלי, תאריך ואופי השימוש."
       },
       {
         id: "mastery_checks",
@@ -283,7 +283,7 @@ const formConfig = [
         label: "מה ההשלכות לשימוש ב-AI מחוץ לגבולות המותרים?",
         type: "checkbox",
         required: true,
-        options: ["דרישה לתיקון או להגשה חוזרת", "דרישה להשלמת הסבר או הגנה על העבודה", "הפחתת ניקוד", "פסילת רכיב מסוים במטלה"],
+        options: ["דרישה לתיקון או להגשה חוזרת", "דרישה לביצוע הגנה בעל פה על העבודה", "הפחתת ניקוד", "פסילת רכיב מסוים במטלה"],
         allowOther: true,
         otherLabel: "אחר"
       },
@@ -310,7 +310,7 @@ const formConfig = [
     intro:
       "השאלות הבאות נועדו לחשיבה פדגוגית עבורכם. אין חובה לענות עליהן כדי להפיק את המדיניות, אבל הן עוזרות לוודא שהמדיניות רואה את כלל הסטודנטים.",
     callout:
-      'ניתן למצוא תכנים מומלצים שתוכלו להנגיש לסטודנטים <a href="https://md.hit.ac.il/course/view.php?id=22997" target="_blank" rel="noopener">בסביבת הלמידה של המרכז</a>, למשל <a href="https://md.hit.ac.il/mod/page/view.php?id=839699" target="_blank" rel="noopener">חומרי הדרכה על שימוש מיטבי ב-AI</a>, או <a href="https://md.hit.ac.il/mod/page/view.php?id=866018&forceview=1" target="_blank" rel="noopener">תכנים על ביצוע סקר ספרות</a>.',
+      'ניתן למצוא <a href="https://md.hit.ac.il/course/view.php?id=22997" target="_blank" rel="noopener">בסביבת TeachHIT</a>  מגוון תכנים שתוכלו לשלב בקורס, כדוגמת <a href="https://md.hit.ac.il/mod/page/view.php?id=839699" target="_blank" rel="noopener">סדרת יחידות הלמידה "מעבר לפרומפט"</a>, <a href="https://md.hit.ac.il/mod/page/view.php?id=866018&forceview=1" target="_blank" rel="noopener">מדריך לסקירת ספרות מיטבית</a> ועוד.',
     questions: [
       {
         id: "equity_paid_tools",
@@ -320,7 +320,7 @@ const formConfig = [
       },
       {
         id: "equity_support",
-        label: "אילו כלים או תמיכות אפשר להציע לסטודנטים שיש להם פערי אוריינות בכלי AI?",
+        label: "אילו כלים או תמיכה אפשר להציע לסטודנטים שיש להם פערי אוריינות בכלי AI?",
         type: "reflection",
         required: false
       }
@@ -1224,15 +1224,15 @@ function buildStudentSlide(answers, forceRegenerate = false) {
   const boundaryLevel = cleanValue(answers.boundary_level);
   const recommendedUses = formatSlideList(answers.recommended_ai?.recommended_uses);
   const recommendedTools = formatSlideList(answers.recommended_ai?.recommended_tools);
-  
+
   let studentResponsibility = cleanValue(answers.student_responsibility);
   if (studentResponsibility.includes("על הסטודנט או הסטודנטית חלה האחריות המלאה")) {
     studentResponsibility = "האחריות המלאה על מהימנות, אתיקה וזכויות יוצרים בתוצרי הקורס היא על הסטודנט/ית.";
   }
-  
+
   const verificationLevel = cleanValue(answers.verification_level);
   const privacyWarnings = formatSlideList(answers.privacy_warnings);
-  
+
   const reportingScope = formatSlideList(answers.reporting_scope);
   let reportingFormat = "";
   if (answers.reporting_format === "קישור לתבנית שלכם" && answers.reporting_format_link) {
@@ -1773,7 +1773,7 @@ function updateWizardProgress() {
   progressBar.style.width = `${percent}%`;
   progress?.setAttribute("aria-valuenow", String(percent));
   prevButton.disabled = state.currentQuestionIndex === 0;
-  nextButton.textContent = state.currentQuestionIndex === total - 1 ? "להפקת מדיניות" : "הבא";
+  nextButton.textContent = state.currentQuestionIndex === total - 1 ? "להפקת נוסח המדיניות" : "הבא";
 
   if (skipButton) {
     if (state.currentQuestionIndex === total - 1) {
@@ -2206,7 +2206,7 @@ function init() {
     if (printContainer) {
       if (printTarget === "slide") {
         document.body.classList.add("printing-slide");
-        
+
         // Append dynamic landscape page orientation style
         let styleEl = document.getElementById("dynamic-print-style");
         if (!styleEl) {
@@ -2233,7 +2233,7 @@ function init() {
 
   window.addEventListener("afterprint", () => {
     document.body.classList.remove("printing-slide");
-    
+
     // Remove dynamic landscape page orientation style
     const styleEl = document.getElementById("dynamic-print-style");
     if (styleEl) {
