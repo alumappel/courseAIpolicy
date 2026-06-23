@@ -442,8 +442,23 @@ main>section:not(#builder) {
   background-color: #f5fbfb;
 }
 
+.choice-card.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.choice-card.flex-wrap .choice-description {
+  display: inline;
+  margin-block-start: 0;
+  margin-inline-start: 0.35rem;
+}
+
 .other-input-wrap {
   margin-block-start: 0.75rem;
+  width: 100%;
+}
+
+.other-input-wrap[hidden] {
+  display: none !important;
 }
 
 .question-block--reflection .question-label {

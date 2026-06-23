@@ -566,23 +566,21 @@ function renderChoiceQuestion(question) {
   if (question.allowOther) {
     const otherId = `${question.id}-other-toggle`;
     const otherCard = document.createElement("div");
-    otherCard.className = "choice-card form-check";
+    otherCard.className = "choice-card form-check flex-wrap";
     otherCard.innerHTML = `
-      <input class="form-check-input" type="${question.type}" name="${question.id}" id="${otherId}" value="__other__" />
-      <label class="form-check-label" for="${otherId}">
-        <span class="choice-title">${question.otherLabel || "אחר"}</span>
-        <span class="choice-description">ניתן לנסח תשובה חופשית משלכם.</span>
-      </label>
+      <div class="d-flex align-items-start gap-2 w-100">
+        <input class="form-check-input" type="${question.type}" name="${question.id}" id="${otherId}" value="__other__" />
+        <label class="form-check-label" for="${otherId}">
+          <span class="choice-title">${question.otherLabel || "אחר"}</span>
+          <span class="choice-description">ניתן לנסח תשובה חופשית משלכם.</span>
+        </label>
+      </div>
     `;
-    const otherInput = document.createElement(question.type === "radio" ? "textarea" : "input");
-    otherInput.className = "form-control other-input-wrap";
+    const otherInput = document.createElement("textarea");
+    otherInput.className = "form-control other-input-wrap mt-2 w-100";
     otherInput.id = `${question.id}-other-text`;
     otherInput.placeholder = question.type === "radio" ? "כתבו כאן את הנוסח שלכם" : "הוסיפו תשובה חופשית";
-    if (question.type !== "radio") {
-      otherInput.type = "text";
-    } else {
-      otherInput.rows = 4;
-    }
+    otherInput.rows = 3;
     otherInput.hidden = true;
     otherInput.setAttribute("aria-label", `${question.label} - תשובה חופשית`);
     otherInput.addEventListener("input", () => {
@@ -1665,7 +1663,7 @@ function renderWizard() {
     <div class="wizard-shell" aria-labelledby="wizard-title">
       <div class="wizard-topbar">
         <div id="wizard-section-header" class="form-section-header mb-0"></div>
-        <p class="wizard-progress-text" id="wizard-progress-text" aria-live="polite"></p>
+        <p class="visually-hidden" id="wizard-progress-text" aria-live="polite"></p>
       </div>
       <div class="progress wizard-progress" role="progressbar" aria-labelledby="wizard-progress-text" aria-valuemin="0" aria-valuemax="100">
         <div class="progress-bar" id="wizard-progress-bar"></div>
@@ -1674,6 +1672,12 @@ function renderWizard() {
       <div class="wizard-actions">
         <div class="wizard-actions-group">
           <button type="button" class="btn btn-outline-primary" id="wizard-prev">הקודם</button>
+          <button type="button" class="btn btn-outline-secondary d-none" id="wizard-clear">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align: middle; margin-inline-end: 0.35rem;">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+              <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
+            </svg><span>נקה תשובות</span>
+          </button>
         </div>
         <div class="wizard-actions-group">
           <button type="button" class="btn btn-outline-primary" id="wizard-skip">דלג על השאלה</button>
@@ -1683,15 +1687,20 @@ function renderWizard() {
     </div>
   `;
 
+  const handleClear = () => {
+    if (resetConfirmModal) {
+      resetConfirmModal.show();
+    } else if (confirm("להתחיל מחדש? כל המידע שמילאת יימחק.")) {
+      resetWizard();
+    }
+  };
+
   document.getElementById("wizard-prev").addEventListener("click", goToPreviousQuestion);
+  document.getElementById("wizard-clear").addEventListener("click", handleClear);
   document.getElementById("wizard-skip").addEventListener("click", () => {
     const total = state.wizardQuestions.length;
     if (state.currentQuestionIndex === total - 1) {
-      if (resetConfirmModal) {
-        resetConfirmModal.show();
-      } else if (confirm("להתחיל מחדש? כל המידע שמילאת יימחק.")) {
-        resetWizard();
-      }
+      handleClear();
     } else {
       skipCurrentQuestion();
     }
@@ -1768,12 +1777,18 @@ function updateWizardProgress() {
   const prevButton = document.getElementById("wizard-prev");
   const nextButton = document.getElementById("wizard-next");
   const skipButton = document.getElementById("wizard-skip");
+  const clearButton = document.getElementById("wizard-clear");
 
   progressText.textContent = `שאלה ${current} מתוך ${total}`;
   progressBar.style.width = `${percent}%`;
   progress?.setAttribute("aria-valuenow", String(percent));
   prevButton.disabled = state.currentQuestionIndex === 0;
   nextButton.textContent = state.currentQuestionIndex === total - 1 ? "להפקת נוסח המדיניות" : "הבא";
+
+  if (clearButton) {
+    const isVisible = state.currentQuestionIndex > 0 && state.currentQuestionIndex < total - 1;
+    clearButton.classList.toggle("d-none", !isVisible);
+  }
 
   if (skipButton) {
     if (state.currentQuestionIndex === total - 1) {
@@ -2192,6 +2207,17 @@ function init() {
   }
   if (downloadSlidePdfBtn) {
     downloadSlidePdfBtn.addEventListener("click", downloadSlideAsPdf);
+  }
+
+  const resultsResetBtn = document.getElementById("results-reset-btn");
+  if (resultsResetBtn) {
+    resultsResetBtn.addEventListener("click", () => {
+      if (resetConfirmModal) {
+        resetConfirmModal.show();
+      } else if (confirm("להתחיל מחדש? כל המידע שמילאת יימחק.")) {
+        resetWizard();
+      }
+    });
   }
 
   policyForm.addEventListener("submit", handleSubmit);
