@@ -2272,6 +2272,57 @@ function init() {
     }
     printTarget = "policy";
   });
+
+  // Auto-close mobile menu on nav link click
+  const navLinks = document.querySelectorAll("#navbarContent .nav-link");
+  const navbarCollapseEl = document.getElementById("navbarContent");
+  if (navLinks && navbarCollapseEl) {
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => {
+        if (navbarCollapseEl.classList.contains("show")) {
+          const bsCollapse = window.bootstrap.Collapse.getInstance(navbarCollapseEl) || new window.bootstrap.Collapse(navbarCollapseEl);
+          bsCollapse.hide();
+        }
+      });
+    });
+  }
+
+  // Hide header on scroll down, show on scroll up; toggle back-to-top button visibility
+  let lastScrollY = window.scrollY;
+  const mainNav = document.getElementById("main-nav");
+  const backToTopBtn = document.getElementById("back-to-top");
+
+  window.addEventListener("scroll", () => {
+    const currentScrollY = window.scrollY;
+
+    if (mainNav) {
+      if (currentScrollY > lastScrollY && currentScrollY > 120) {
+        mainNav.classList.add("navbar-hidden");
+      } else {
+        mainNav.classList.remove("navbar-hidden");
+      }
+    }
+
+    if (backToTopBtn) {
+      if (currentScrollY > 300) {
+        backToTopBtn.classList.add("visible");
+      } else {
+        backToTopBtn.classList.remove("visible");
+      }
+    }
+
+    lastScrollY = currentScrollY;
+  }, { passive: true });
+
+  // Scroll to top on click
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener("click", () => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    });
+  }
 }
 
 function downloadSlideAsImage() {
