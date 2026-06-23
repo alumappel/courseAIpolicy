@@ -2314,13 +2314,15 @@ function init() {
     lastScrollY = currentScrollY;
   }, { passive: true });
 
-  // Scroll to top on click
+  // Scroll to top on click and reset focus to start of document
   if (backToTopBtn) {
     backToTopBtn.addEventListener("click", () => {
       window.scrollTo({
         top: 0,
         behavior: "smooth"
       });
+      document.body.setAttribute("tabindex", "-1");
+      document.body.focus({ preventScroll: true });
     });
   }
 

@@ -86,10 +86,13 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
+.btn:focus-visible,
+.form-check-input:focus-visible,
 .form-check-input:focus-visible+.form-check-label,
 .summary-link:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 3px;
+  outline: 3px solid var(--color-accent) !important;
+  outline-offset: 3px !important;
+  box-shadow: none !important;
 }
 
 .skip-link {
@@ -228,9 +231,10 @@ main>section:not(#builder) {
 #main-nav .nav-link:hover,
 #main-nav .nav-link:focus-visible,
 #main-nav .nav-link.active {
-  color: #fff;
+  color: var(--color-accent) !important;
   background-color: transparent;
   text-decoration: underline;
+  text-decoration-color: var(--color-accent) !important;
 }
 
 .hero-section {
