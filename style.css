@@ -34,6 +34,7 @@
 html {
   scroll-behavior: smooth;
   font-size: 106.25%;
+  scroll-padding-top: 90px;
 }
 
 body {
@@ -225,7 +226,7 @@ main>section:not(#builder) {
 }
 
 .hero-section {
-  min-block-size: 68vh;
+  min-block-size: 40vh;
   background-color: var(--color-primary-dark);
   isolation: isolate;
   padding-block-start: 6rem;
@@ -255,7 +256,7 @@ main>section:not(#builder) {
 }
 
 .hero-visual {
-  inline-size: min(100%, 23rem);
+  inline-size: min(100%, 18rem);
 }
 
 .hero-logo-wrap img {
@@ -913,6 +914,10 @@ footer a:hover {
 }
 
 @media (max-width: 991.98px) {
+  html {
+    scroll-padding-top: 75px;
+  }
+
   .hero-section {
     min-block-size: auto;
     padding-block: 7rem 4rem;
