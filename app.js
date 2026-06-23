@@ -2214,7 +2214,7 @@ function init() {
           styleEl.id = "dynamic-print-style";
           styleEl.innerHTML = `
             @page {
-              size: 297mm 167mm;
+              size: landscape;
               margin: 0;
             }
           `;
