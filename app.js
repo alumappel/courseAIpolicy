@@ -2323,6 +2323,63 @@ function init() {
       });
     });
   }
+
+  // Hero Animation Play/Pause Control
+  const toggleHeroAnimBtn = document.getElementById("toggle-hero-anim");
+  const heroGridBg = document.getElementById("hero-grid-bg");
+  const srAnnouncer = document.getElementById("sr-announcer");
+
+  if (toggleHeroAnimBtn && heroGridBg) {
+    const iconPause = toggleHeroAnimBtn.querySelector(".icon-pause");
+    const iconPlay = toggleHeroAnimBtn.querySelector(".icon-play");
+
+    // Helper to set paused state
+    const setAnimationsState = (isPaused, announce = false) => {
+      if (isPaused) {
+        heroGridBg.classList.add("animations-paused");
+        if (iconPause) iconPause.style.display = "none";
+        if (iconPlay) iconPlay.style.display = "block";
+        toggleHeroAnimBtn.setAttribute("aria-label", "הפעלת אנימציית רקע");
+        toggleHeroAnimBtn.setAttribute("title", "הפעלת אנימציית רקע");
+        if (announce && srAnnouncer) {
+          srAnnouncer.textContent = "אנימציית רקע הופסקה";
+        }
+      } else {
+        heroGridBg.classList.remove("animations-paused");
+        if (iconPause) iconPause.style.display = "block";
+        if (iconPlay) iconPlay.style.display = "none";
+        toggleHeroAnimBtn.setAttribute("aria-label", "עצירת אנימציית רקע");
+        toggleHeroAnimBtn.setAttribute("title", "עצירת אנימציית רקע");
+        if (announce && srAnnouncer) {
+          srAnnouncer.textContent = "אנימציית רקע הופעלה";
+        }
+      }
+    };
+
+    // Load initial preference from localStorage
+    let isPausedLocal = false;
+    try {
+      isPausedLocal = localStorage.getItem("hit_hero_anim_paused") === "true";
+    } catch (e) {}
+
+    // Check system preference
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const initialPaused = isPausedLocal || prefersReducedMotion;
+
+    setAnimationsState(initialPaused);
+
+    // Toggle click listener
+    toggleHeroAnimBtn.addEventListener("click", () => {
+      const currentlyPaused = heroGridBg.classList.contains("animations-paused");
+      const nextPausedState = !currentlyPaused;
+
+      setAnimationsState(nextPausedState, true);
+
+      try {
+        localStorage.setItem("hit_hero_anim_paused", nextPausedState.toString());
+      } catch (e) {}
+    });
+  }
 }
 
 function downloadSlideAsImage() {

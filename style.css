@@ -235,7 +235,7 @@ main>section:not(#builder) {
 
 .hero-section {
   min-block-size: 40vh;
-  background-color: var(--color-primary-dark);
+  background: linear-gradient(135deg, #002d30 0%, var(--color-primary-dark) 100%);
   isolation: isolate;
   padding-block-start: 6rem;
   overflow: hidden;
@@ -245,9 +245,7 @@ main>section:not(#builder) {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 80px),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.18));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.18));
   z-index: -1;
 }
 
@@ -700,7 +698,7 @@ main>section:not(#builder) {
 }
 
 .slide-preview {
-  background: 
+  background:
     linear-gradient(90deg, rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
     linear-gradient(rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
     linear-gradient(135deg, #f0f8f8 0%, #a4cbce 100%);
@@ -1048,7 +1046,7 @@ footer a:hover {
     max-height: 100vh !important;
     padding: 1.8cqw 2.2cqw !important;
     box-sizing: border-box !important;
-    background: 
+    background:
       linear-gradient(90deg, rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
       linear-gradient(rgba(0, 81, 87, 0.025) 1px, transparent 1px) 0 0 / 2cqw 2cqw,
       linear-gradient(135deg, #f0f8f8 0%, #a4cbce 100%) !important;
@@ -1294,5 +1292,385 @@ footer a:hover {
     right: 1.5rem;
     width: 46px;
     height: 46px;
+  }
+}
+
+/* ================================
+   Hero Grid Backdrop & Control Button
+   ================================ */
+.hero-grid-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-color: #002d30;
+  overflow: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.hero-grid-backdrop .grid-line {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.085);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.hero-grid-backdrop .grid-line.vertical {
+  width: 2px;
+  height: 100%;
+  top: 0;
+}
+
+.hero-grid-backdrop .grid-line.horizontal {
+  height: 2px;
+  width: 100%;
+  left: 0;
+}
+
+/* Initial positions (7 columns, 5 rows) and active GPU animations */
+.hero-grid-backdrop .v1 {
+  left: 14.28%;
+  animation: v1Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .v2 {
+  left: 28.57%;
+  animation: v2Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .v3 {
+  left: 42.85%;
+  animation: v3Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .v4 {
+  left: 57.14%;
+  animation: v4Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .v5 {
+  left: 71.42%;
+  animation: v5Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .v6 {
+  left: 85.71%;
+  animation: v6Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .h1 {
+  top: 20%;
+  animation: h1Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .h2 {
+  top: 40%;
+  animation: h2Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .h3 {
+  top: 60%;
+  animation: h3Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hero-grid-backdrop .h4 {
+  top: 80%;
+  animation: h4Shift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animations-paused .grid-line {
+  animation-play-state: paused !important;
+}
+
+@keyframes v1Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(3.5vw, 0, 0);
+  }
+
+  40% {
+    transform: translate3d(-1vw, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(2.5vw, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(-2.5vw, 0, 0);
+  }
+}
+
+@keyframes v2Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(-2.5vw, 0, 0);
+  }
+
+  40% {
+    transform: translate3d(4vw, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(-1vw, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(2.5vw, 0, 0);
+  }
+}
+
+@keyframes v3Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(3vw, 0, 0);
+  }
+
+  40% {
+    transform: translate3d(-3.5vw, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(1.5vw, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(-1.5vw, 0, 0);
+  }
+}
+
+@keyframes v4Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(-4vw, 0, 0);
+  }
+
+  40% {
+    transform: translate3d(1vw, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(-3vw, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(3.5vw, 0, 0);
+  }
+}
+
+@keyframes v5Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(1.5vw, 0, 0);
+  }
+
+  40% {
+    transform: translate3d(-2.5vw, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(4vw, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(-3.5vw, 0, 0);
+  }
+}
+
+@keyframes v6Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(-1.5vw, 0, 0);
+  }
+
+  40% {
+    transform: translate3d(2.5vw, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(-4vw, 0, 0);
+  }
+
+  80% {
+    transform: translate3d(1.5vw, 0, 0);
+  }
+}
+
+@keyframes h1Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(0, 3.5vh, 0);
+  }
+
+  40% {
+    transform: translate3d(0, -1.5vh, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 2.5vh, 0);
+  }
+
+  80% {
+    transform: translate3d(0, -2.5vh, 0);
+  }
+}
+
+@keyframes h2Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(0, -2vh, 0);
+  }
+
+  40% {
+    transform: translate3d(0, 4.5vh, 0);
+  }
+
+  60% {
+    transform: translate3d(0, -1vh, 0);
+  }
+
+  80% {
+    transform: translate3d(0, 3vh, 0);
+  }
+}
+
+@keyframes h3Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(0, 3.5vh, 0);
+  }
+
+  40% {
+    transform: translate3d(0, -4vh, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 2vh, 0);
+  }
+
+  80% {
+    transform: translate3d(0, -2vh, 0);
+  }
+}
+
+@keyframes h4Shift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  20% {
+    transform: translate3d(0, -4.5vh, 0);
+  }
+
+  40% {
+    transform: translate3d(0, 1.5vh, 0);
+  }
+
+  60% {
+    transform: translate3d(0, -3.5vh, 0);
+  }
+
+  80% {
+    transform: translate3d(0, 4vh, 0);
+  }
+}
+
+.btn-toggle-anim {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  padding: 0;
+  cursor: pointer;
+}
+
+.btn-toggle-anim:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: scale(1.05);
+}
+
+.btn-toggle-anim:active {
+  transform: scale(0.95);
+}
+
+.btn-toggle-anim:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-grid-backdrop .grid-line {
+    animation: none !important;
+  }
+
+  .btn-toggle-anim {
+    display: none !important;
   }
 }
